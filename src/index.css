@@ -104,8 +104,8 @@
     background: #ffffff !important;
     background-image: none !important;
     color: #1c1917 !important;
-    font-size: 9.5pt;
-    line-height: 1.3;
+    font-size: 9pt;
+    line-height: 1.28;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -302,13 +302,23 @@
   }
 
   article.card {
-    padding: 6pt 8pt !important;
-    margin-bottom: 4pt !important;
+    padding: 5pt 7pt !important;
+    margin-bottom: 3pt !important;
+    /* Override the default .card avoid so the first card can start
+       at the bottom of a page directly under its section title
+       instead of leaving whitespace and getting pushed wholesale
+       to the next page. Splits cleanly on paragraph/list boundaries. */
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    orphans: 2;
+    widows: 2;
   }
 
   article.card h3 {
     font-size: 10pt !important;
     margin-top: 1pt !important;
+    page-break-after: avoid;
+    break-after: avoid;
   }
 
   article.card p {
