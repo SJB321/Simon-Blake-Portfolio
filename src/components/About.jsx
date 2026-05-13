@@ -15,16 +15,31 @@ export default function About() {
         <SectionHeading eyebrow="About" title="A bit about me" />
 
         <div className="mt-12 grid gap-12 lg:grid-cols-5 items-start">
-          <Reveal className="lg:col-span-3 space-y-5 text-stone-700 leading-relaxed">
+          {/* Photo first in DOM (so float:right works in print). Grid placement
+              keeps it on the right of the text on screen. */}
+          <Reveal delay={120} className="about-photo order-2 lg:order-none lg:col-start-4 lg:col-span-2 lg:row-start-1">
+            <div className="group relative mx-auto w-full max-w-xs">
+              <div className="absolute inset-0 translate-x-3 translate-y-3 rounded-xl border border-accent/40 transition-transform duration-300 group-hover:translate-x-2 group-hover:translate-y-2 print:hidden" />
+              <div className="relative overflow-hidden rounded-xl border border-stone-200 bg-stone-100 aspect-[4/5]">
+                <img
+                  src="/Profile.jpeg"
+                  alt="Simon Blake"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              </div>
+            </div>
+          </Reveal>
+
+          <Reveal className="about-copy order-1 lg:order-none lg:col-start-1 lg:col-span-3 lg:row-start-1 space-y-5 text-stone-700 leading-relaxed">
             <p>
-              I&apos;m a sophomore at RIT studying Game Design & Development. I spend most of my time 
+              I&apos;m a sophomore at RIT studying Game Design & Development. I spend most of my time
               playing various formats of games be it physical or digital. Through my experience playing games,
               I have developed a respect for well crafted and polished games, so I am very passionate about well
               crafted, and mechanically fun and interesting games.
             </p>
             <p>
-              I work well in collaborative environments as well as on my own. I have experience working on teams, such as 
-              a collaborative game I worked on "Portal Boyz", where I was primarily responsible for optimizing the physics and 
+              I work well in collaborative environments as well as on my own. I have experience working on teams, such as
+              a collaborative game I worked on "Portal Boyz", where I was primarily responsible for optimizing the physics and
               collisions. I also have experience working on individual projects such as *placeholder*.
             </p>
             <p>
@@ -41,19 +56,6 @@ export default function About() {
                 </li>
               ))}
             </ul>
-          </Reveal>
-
-          <Reveal delay={120} className="lg:col-span-2">
-            <div className="group relative mx-auto w-full max-w-xs">
-              <div className="absolute inset-0 translate-x-3 translate-y-3 rounded-xl border border-accent/40 transition-transform duration-300 group-hover:translate-x-2 group-hover:translate-y-2" />
-              <div className="relative overflow-hidden rounded-xl border border-stone-200 bg-stone-100 aspect-[4/5]">
-                <img
-                  src="/Profile.jpeg"
-                  alt="Simon Blake"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              </div>
-            </div>
           </Reveal>
         </div>
       </div>
