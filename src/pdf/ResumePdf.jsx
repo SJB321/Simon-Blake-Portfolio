@@ -19,6 +19,7 @@ import SourceSerifRegular from '@fontsource/source-serif-4/files/source-serif-4-
 import SourceSerifItalic from '@fontsource/source-serif-4/files/source-serif-4-latin-400-italic.woff?url'
 import SourceSerifBold from '@fontsource/source-serif-4/files/source-serif-4-latin-700-normal.woff?url'
 import SourceSansRegular from '@fontsource/source-sans-3/files/source-sans-3-latin-400-normal.woff?url'
+import SourceSansItalic from '@fontsource/source-sans-3/files/source-sans-3-latin-400-italic.woff?url'
 import SourceSansBold from '@fontsource/source-sans-3/files/source-sans-3-latin-700-normal.woff?url'
 
 Font.register({
@@ -34,6 +35,7 @@ Font.register({
   family: 'Source Sans',
   fonts: [
     { src: SourceSansRegular },
+    { src: SourceSansItalic, fontStyle: 'italic' },
     { src: SourceSansBold, fontWeight: 700 },
   ],
 })
