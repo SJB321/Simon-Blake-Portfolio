@@ -53,14 +53,14 @@ const RULE = '#c4c4c4'
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 36,
-    paddingBottom: 36,
+    paddingTop: 30,
+    paddingBottom: 30,
     paddingLeft: 40,
     paddingRight: 40,
     fontFamily: 'Source Sans',
     fontSize: 9,
     color: BODY,
-    lineHeight: 1.35,
+    lineHeight: 1.3,
   },
 
   // ── HEADER ────────────────────────────────────────────────
@@ -95,8 +95,8 @@ const styles = StyleSheet.create({
     color: NAVY,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
-    marginTop: 10,
-    marginBottom: 3,
+    marginTop: 6,
+    marginBottom: 2,
     paddingBottom: 2,
     borderBottomWidth: 0.6,
     borderBottomColor: RULE,
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   summary: {
     fontSize: 9,
     color: BODY,
-    lineHeight: 1.35,
+    lineHeight: 1.3,
   },
 
   // ── EDUCATION ─────────────────────────────────────────────
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
 
   // ── PROJECTS / EXPERIENCE ENTRIES ─────────────────────────
   entry: {
-    marginTop: 5,
+    marginTop: 4,
   },
   entryTitle: {
     fontFamily: 'Source Sans',
