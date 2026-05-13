@@ -11,22 +11,22 @@ export const projects = [
     ],
     tech: ['C#', 'Monogame', 'Visual Studio'],
     links: {
-      // github: 'https://github.com/your-username/portal-platformer',
-      // demo: 'https://example.com/demo',
+      github: 'https://github.com/Charlie-GCCIS/FFPO_106',
     },
   },
   {
-    title: 'Project Two — Placeholder',
-    role: 'Gameplay Programmer',
-    year: '2025',
+    title: 'Autonomous Agent Experimentation',
+    role: 'Sole Developer',
+    year: '2026',
     description:
-      'Short, sharp description of the project. What it is, what makes it interesting, what your slice of the work was.',
+      'This project involved applying knowledge of autonomous agents to simulate an environment. I created a space themed environment with two types of agents: a friendly ship and an enemy ship. The friendly ship navigates to different planets with other ships while avoiding enemies and hazards, while the enemy ship wanders around and chases friendly ships if they get too close.',
     impact: [
-      'One concrete result — a system shipped, a measurable improvement, a problem solved.',
-      'A second result framed in terms of impact on the team, the game, or the player.',
+      
     ],
     tech: ['Unity', 'C#'],
-    links: {},
+    links: {
+      demo: 'https://igme-202-2255.github.io/202-work-SJB10/Project_03/',
+    },
   },
   {
     title: 'Project Three — Placeholder',
