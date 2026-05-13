@@ -30,6 +30,10 @@ export async function generateResumePdf() {
 
     // Free the blob URL on the next tick so the download has time to start.
     setTimeout(() => URL.revokeObjectURL(url), 1000)
+  } catch (err) {
+    console.error('[Resume PDF] generation failed:', err)
+    alert(`Sorry — resume download failed: ${err?.message || err}`)
+    throw err
   } finally {
     inFlight = false
   }
