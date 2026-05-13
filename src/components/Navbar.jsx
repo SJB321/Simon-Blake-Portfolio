@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Menu, X } from 'lucide-react'
+import { generateResumePdf } from '../utils/generatePdf.js'
 
 const links = [
   { href: '#about', label: 'About' },
@@ -13,10 +14,17 @@ const links = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const [generating, setGenerating] = useState(false)
 
-  const handleResume = () => {
+  const handleResume = async () => {
     setOpen(false)
-    window.print()
+    if (generating) return
+    setGenerating(true)
+    try {
+      await generateResumePdf()
+    } finally {
+      setGenerating(false)
+    }
   }
 
   useEffect(() => {
@@ -57,10 +65,11 @@ export default function Navbar() {
             <button
               type="button"
               onClick={handleResume}
-              className="btn-secondary text-xs"
-              title="Save the site as a PDF"
+              disabled={generating}
+              className="btn-secondary text-xs disabled:opacity-60 disabled:cursor-wait"
+              title="Download a PDF resume of this site"
             >
-              Resume
+              {generating ? 'Generating…' : 'Resume'}
             </button>
           </li>
         </ul>
@@ -94,9 +103,10 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={handleResume}
-                className="btn-secondary w-full"
+                disabled={generating}
+                className="btn-secondary w-full disabled:opacity-60 disabled:cursor-wait"
               >
-                Resume
+                {generating ? 'Generating…' : 'Resume'}
               </button>
             </li>
           </ul>

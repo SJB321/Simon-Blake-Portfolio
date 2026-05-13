@@ -19,7 +19,7 @@ export default function About() {
               keeps it on the right of the text on screen. */}
           <Reveal delay={120} className="about-photo order-2 lg:order-none lg:col-start-4 lg:col-span-2 lg:row-start-1">
             <div className="group relative mx-auto w-full max-w-xs">
-              <div className="absolute inset-0 translate-x-3 translate-y-3 rounded-xl border border-accent/40 transition-transform duration-300 group-hover:translate-x-2 group-hover:translate-y-2 print:hidden" />
+              <div className="absolute inset-0 translate-x-3 translate-y-3 rounded-xl border border-accent/40 transition-transform duration-300 group-hover:translate-x-2 group-hover:translate-y-2 no-print" />
               <div className="relative overflow-hidden rounded-xl border border-stone-200 bg-stone-100 aspect-[4/5]">
                 <img
                   src="/Profile.jpeg"

@@ -88,332 +88,313 @@
 }
 
 /* -----------------------------------------------------------
-   PRINT STYLES — “Save as PDF” mode
-   Click the Resume button → browser print dialog → Save as PDF.
-   Text stays vector & selectable; layout reflows to paper.
-   Tuned for compactness: ~2 pages for a typical student resume.
+   PDF / PRINT STYLES — single source of truth.
+
+   Triggered by adding the `print-mode` class to <body>:
+     - utils/generatePdf.js adds it before html2pdf renders, removes it after
+     - main.jsx beforeprint/afterprint listeners add/remove it on Ctrl+P
+
+   Why a class (not @media print)? html2pdf uses html2canvas which ignores
+   @media print. Class-based rules apply equally to both code paths, so the
+   PDF and the browser-printed copy share one design.
    ----------------------------------------------------------- */
-@media print {
-  @page {
-    size: letter;
-    margin: 0.4in 0.45in;
-  }
 
-  html,
-  body {
-    background: #ffffff !important;
-    background-image: none !important;
-    color: #1c1917 !important;
-    font-size: 9pt;
-    line-height: 1.28;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+/* @page only affects browser print (Ctrl+P). html2pdf gets its page size
+   and margins from jsPDF options in utils/generatePdf.js. */
+@page {
+  size: letter;
+  margin: 0.4in 0.45in;
+}
 
-  /* Hide site chrome */
-  header,
-  footer,
-  .no-print,
-  [href="#main"] {
-    display: none !important;
-  }
+body.print-mode {
+  background: #ffffff !important;
+  background-image: none !important;
+  color: #1c1917 !important;
+  font-size: 9pt;
+  line-height: 1.28;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
 
-  /* Cancel scroll-margin so anchors don't add space on paper */
-  .section {
-    scroll-margin-top: 0 !important;
-  }
+/* Hide site chrome */
+body.print-mode header,
+body.print-mode footer,
+body.print-mode .no-print,
+body.print-mode [href="#main"] {
+  display: none !important;
+}
 
-  /* Freeze animations to their visible state */
-  .reveal,
-  [class*="animate-"] {
-    opacity: 1 !important;
-    transform: none !important;
-    animation: none !important;
-    transition: none !important;
-  }
+/* Cancel scroll-margin so anchors don't add space */
+body.print-mode .section {
+  scroll-margin-top: 0 !important;
+  padding-top: 4pt !important;
+  padding-bottom: 4pt !important;
+  margin: 0 !important;
+}
 
-  /* Container + tight section spacing */
-  .container-page {
-    max-width: 100% !important;
-    padding: 0 !important;
-  }
+/* Freeze animations to their final visible state */
+body.print-mode .reveal,
+body.print-mode [class*="animate-"] {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+  transition: none !important;
+}
 
-  .section {
-    padding-top: 4pt !important;
-    padding-bottom: 4pt !important;
-    margin: 0 !important;
-  }
+body.print-mode .container-page {
+  max-width: 100% !important;
+  padding: 0 !important;
+}
 
-  /* Hide all interactive buttons in print */
-  .btn-primary,
-  .btn-secondary,
-  .btn-ghost {
-    display: none !important;
-  }
+/* Hide all interactive buttons */
+body.print-mode .btn-primary,
+body.print-mode .btn-secondary,
+body.print-mode .btn-ghost {
+  display: none !important;
+}
 
-  /* Show the print-only contact strip in the hero */
-  .print-only {
-    display: block !important;
-  }
+/* Show the print-only contact strip in the hero */
+body.print-mode .print-only {
+  display: block !important;
+}
 
-  /* HERO ----------------------------------------------------- */
-  #top {
-    padding-top: 0 !important;
-    padding-bottom: 4pt !important;
-    border-bottom: 1px solid #d4d4d4;
-    margin-bottom: 2pt;
-  }
+/* HERO ----------------------------------------------------- */
+body.print-mode #top {
+  padding-top: 0 !important;
+  padding-bottom: 4pt !important;
+  border-bottom: 1px solid #d4d4d4;
+  margin-bottom: 2pt;
+}
 
-  #top h1 {
-    font-size: 20pt !important;
-    line-height: 1.05 !important;
-    margin-top: 1pt !important;
-  }
+body.print-mode #top h1 {
+  font-size: 20pt !important;
+  line-height: 1.05 !important;
+  margin-top: 1pt !important;
+}
 
-  #top h2 {
-    font-size: 10pt !important;
-    line-height: 1.25 !important;
-    margin-top: 1pt !important;
-    color: #57534e !important;
-    font-style: italic;
-  }
+body.print-mode #top h2 {
+  font-size: 10pt !important;
+  line-height: 1.25 !important;
+  margin-top: 1pt !important;
+  color: #57534e !important;
+  font-style: italic;
+}
 
-  #top .max-w-3xl > p {
-    font-size: 9pt !important;
-    margin-top: 3pt !important;
-  }
+body.print-mode #top .max-w-3xl > p {
+  font-size: 9pt !important;
+  margin-top: 3pt !important;
+}
 
-  .hero-availability {
-    font-size: 8pt !important;
-    margin-top: 3pt !important;
-    color: #6b6b6b !important;
-  }
+body.print-mode .hero-availability {
+  font-size: 8pt !important;
+  margin-top: 3pt !important;
+  color: #6b6b6b !important;
+}
 
-  .hero-availability-dot {
-    display: none !important;
-  }
+body.print-mode .hero-availability-dot {
+  display: none !important;
+}
 
-  /* SECTION HEADINGS ---------------------------------------- */
-  .section-title {
-    font-size: 11pt !important;
-    margin-top: 0 !important;
-    margin-bottom: 1pt !important;
-  }
+/* SECTION HEADINGS ---------------------------------------- */
+body.print-mode .section-title {
+  font-size: 11pt !important;
+  margin-top: 0 !important;
+  margin-bottom: 1pt !important;
+}
 
-  .section-eyebrow {
-    font-size: 7pt !important;
-    letter-spacing: 0.16em !important;
-  }
+body.print-mode .section-eyebrow {
+  font-size: 7pt !important;
+  letter-spacing: 0.16em !important;
+}
 
-  .section-lead {
-    font-size: 8.5pt !important;
-    max-width: 100% !important;
-    margin-top: 1pt !important;
-  }
+body.print-mode .section-lead {
+  font-size: 8.5pt !important;
+  max-width: 100% !important;
+  margin-top: 1pt !important;
+}
 
-  /* Tighten the spacing under section headings */
-  section > div > div + div {
-    margin-top: 4pt !important;
-  }
+/* Tighten the spacing under section headings */
+body.print-mode section > div > div + div {
+  margin-top: 4pt !important;
+}
 
-  /* CARDS — flatten visually for paper */
-  .card {
-    border-color: #d4d4d4 !important;
-    background: #ffffff !important;
-    box-shadow: none !important;
-    border-radius: 4pt !important;
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
+/* CARDS — flatten visually for paper */
+body.print-mode .card {
+  border-color: #d4d4d4 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  border-radius: 4pt !important;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
 
-  /* GRID HANDLING — section-specific, not blanket */
+/* ABOUT: photo floats right, text wraps around it */
+body.print-mode #about .grid {
+  display: block !important;
+}
 
-  /* ABOUT: photo floats right, text wraps around it */
-  #about .grid {
-    display: block !important;
-  }
+body.print-mode #about .about-photo {
+  float: right !important;
+  width: 80pt !important;
+  max-width: 80pt !important;
+  margin: 0 0 4pt 10pt !important;
+  page-break-inside: avoid;
+}
 
-  #about .about-photo {
-    float: right !important;
-    width: 80pt !important;
-    max-width: 80pt !important;
-    margin: 0 0 4pt 10pt !important;
-    page-break-inside: avoid;
-  }
+body.print-mode #about .about-photo .group {
+  margin: 0 !important;
+  max-width: 100% !important;
+}
 
-  #about .about-photo .group {
-    margin: 0 !important;
-    max-width: 100% !important;
-  }
+body.print-mode #about .group > .absolute.translate-x-3 {
+  display: none !important;
+}
 
-  /* Drop the offset accent border decoration */
-  #about .group > .absolute.translate-x-3 {
-    display: none !important;
-  }
+body.print-mode #about p {
+  margin-top: 3pt !important;
+}
 
-  #about .about-copy {
-    /* nothing — text fills full width and wraps around float */
-  }
+body.print-mode #about ul {
+  padding-top: 2pt !important;
+  margin-top: 4pt !important;
+}
 
-  #about p {
-    margin-top: 3pt !important;
-  }
+body.print-mode #about ul li {
+  margin-top: 0 !important;
+}
 
-  #about ul {
-    padding-top: 2pt !important;
-    margin-top: 4pt !important;
-  }
+body.print-mode #about::after {
+  content: '';
+  display: block;
+  clear: both;
+}
 
-  #about ul li {
-    margin-top: 0 !important;
-  }
+/* SKILLS: 2-column grid */
+body.print-mode #skills .grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 6pt 10pt !important;
+}
 
-  /* Clear floats after the About section */
-  #about::after {
-    content: '';
-    display: block;
-    clear: both;
-  }
+body.print-mode #skills .card {
+  padding: 4pt 6pt !important;
+}
 
-  /* SKILLS: keep 2-column grid for compactness */
-  #skills .grid {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 6pt 10pt !important;
-  }
+body.print-mode #skills h3 {
+  font-size: 7.5pt !important;
+  margin-bottom: 2pt !important;
+}
 
-  #skills .card {
-    padding: 4pt 6pt !important;
-  }
+body.print-mode #skills .chip {
+  padding: 0 4pt !important;
+  font-size: 8pt !important;
+}
 
-  #skills h3 {
-    font-size: 7.5pt !important;
-    margin-bottom: 2pt !important;
-  }
+/* PROJECTS: single column; allow cards to split */
+body.print-mode #projects .grid {
+  display: block !important;
+}
 
-  #skills .chip {
-    padding: 0 4pt !important;
-    font-size: 8pt !important;
-  }
+body.print-mode article.card {
+  padding: 5pt 7pt !important;
+  margin-bottom: 3pt !important;
+  page-break-inside: auto !important;
+  break-inside: auto !important;
+  orphans: 2;
+  widows: 2;
+}
 
-  /* PROJECTS: single column (cards have too much content for 2-col on paper) */
-  #projects .grid {
-    display: block !important;
-  }
+body.print-mode article.card h3 {
+  font-size: 10pt !important;
+  margin-top: 1pt !important;
+  page-break-after: avoid;
+  break-after: avoid;
+}
 
-  article.card {
-    padding: 5pt 7pt !important;
-    margin-bottom: 3pt !important;
-    /* Override the default .card avoid so the first card can start
-       at the bottom of a page directly under its section title
-       instead of leaving whitespace and getting pushed wholesale
-       to the next page. Splits cleanly on paragraph/list boundaries. */
-    page-break-inside: auto !important;
-    break-inside: auto !important;
-    orphans: 2;
-    widows: 2;
-  }
+body.print-mode article.card p {
+  margin-top: 2pt !important;
+}
 
-  article.card h3 {
-    font-size: 10pt !important;
-    margin-top: 1pt !important;
-    page-break-after: avoid;
-    break-after: avoid;
-  }
+body.print-mode article.card ul {
+  margin-top: 2pt !important;
+}
 
-  article.card p {
-    margin-top: 2pt !important;
-  }
+body.print-mode article.card ul li {
+  margin-top: 0 !important;
+}
 
-  article.card ul {
-    margin-top: 2pt !important;
-  }
+/* EXPERIENCE timeline */
+body.print-mode ol.border-l {
+  border-color: #c4c4c4 !important;
+  margin-left: 3pt !important;
+  margin-top: 4pt !important;
+}
 
-  article.card ul li {
-    margin-top: 0 !important;
-  }
+body.print-mode ol.border-l > li {
+  padding-left: 12pt !important;
+  margin-bottom: 4pt !important;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
 
-  /* EXPERIENCE timeline — keep but tighten */
-  ol.border-l {
-    border-color: #c4c4c4 !important;
-    margin-left: 3pt !important;
-    margin-top: 4pt !important;
-  }
+body.print-mode ol.border-l > li h3 {
+  font-size: 10pt !important;
+}
 
-  ol.border-l > li {
-    padding-left: 12pt !important;
-    margin-bottom: 4pt !important;
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
+body.print-mode ol.border-l > li ul {
+  margin-top: 1pt !important;
+}
 
-  ol.border-l > li h3 {
-    font-size: 10pt !important;
-  }
+body.print-mode ol.border-l > li ul li {
+  margin-top: 0 !important;
+}
 
-  ol.border-l > li ul {
-    margin-top: 1pt !important;
-  }
+/* EDUCATION */
+body.print-mode #education .grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10pt !important;
+  margin-top: 4pt !important;
+}
 
-  ol.border-l > li ul li {
-    margin-top: 0 !important;
-  }
+body.print-mode #education .card {
+  padding: 6pt 8pt !important;
+  page-break-inside: auto !important;
+  break-inside: auto !important;
+}
 
-  /* EDUCATION: keep honors/coursework side-by-side */
-  #education .grid {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 10pt !important;
-    margin-top: 4pt !important;
-  }
+body.print-mode #education h3 {
+  font-size: 11pt !important;
+}
 
-  #education .card {
-    padding: 6pt 8pt !important;
-    /* Allow the Education card to split across pages if needed —
-       it's the last section, so a small overflow is preferable to
-       getting the entire card shoved to a new page. */
-    page-break-inside: auto !important;
-    break-inside: auto !important;
-  }
+body.print-mode #education h4 {
+  font-size: 7.5pt !important;
+  margin-bottom: 2pt !important;
+}
 
-  #education h3 {
-    font-size: 11pt !important;
-  }
+body.print-mode #education ul li {
+  margin-top: 0 !important;
+}
 
-  #education h4 {
-    font-size: 7.5pt !important;
-    margin-bottom: 2pt !important;
-  }
+body.print-mode #experience {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
 
-  #education ul li {
-    margin-top: 0 !important;
-  }
+body.print-mode ul li {
+  margin-top: 0 !important;
+}
 
-  /* Keep Experience intact, but let Education flow naturally */
-  #experience {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
+body.print-mode .print-only p {
+  margin: 0 !important;
+  line-height: 1.25 !important;
+}
 
-  /* List bullets/spacing — tighten everywhere */
-  ul li {
-    margin-top: 0 !important;
-  }
-
-  /* Hero contact strip — tighter */
-  .print-only p {
-    margin: 0 !important;
-    line-height: 1.25 !important;
-  }
-
-  /* LINK URL DISCLOSURE
-     Show the href next to body-text links so a printed copy is
-     self-contained. Apply explicitly via class to avoid icon links. */
-  a.print-show-url[href]::after {
-    content: " — " attr(href);
-    font-weight: 400;
-    font-size: 8pt;
-    color: #6b6b6b;
-    word-break: break-all;
-  }
+/* External-link URL disclosure (only applies to opt-in links) */
+body.print-mode a.print-show-url[href]::after {
+  content: " — " attr(href);
+  font-weight: 400;
+  font-size: 8pt;
+  color: #6b6b6b;
+  word-break: break-all;
 }

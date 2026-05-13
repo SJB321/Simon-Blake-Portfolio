@@ -1,14 +1,26 @@
+import { useState } from 'react'
 import { ArrowRight, FileText, FolderGit2, Mail } from 'lucide-react'
 import { profile } from '../data/profile.js'
+import { generateResumePdf } from '../utils/generatePdf.js'
 
 export default function Hero() {
-  const handleResume = () => window.print()
+  const [generating, setGenerating] = useState(false)
+
+  const handleResume = async () => {
+    if (generating) return
+    setGenerating(true)
+    try {
+      await generateResumePdf()
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   return (
     <section id="top" className="relative pt-32 sm:pt-40 pb-24">
       <div className="container-page">
         <div className="max-w-3xl">
-          <p className="font-serif italic text-base text-accent animate-fade-in print:hidden">
+          <p className="font-serif italic text-base text-accent animate-fade-in no-print">
             Hello, my name is
           </p>
 
@@ -50,8 +62,14 @@ export default function Hero() {
             className="mt-10 flex flex-wrap items-center gap-3 animate-fade-up"
             style={{ animationDelay: '320ms' }}
           >
-            <button type="button" onClick={handleResume} className="btn-primary" title="Save the site as a PDF">
-              <FileText size={16} /> Resume
+            <button
+              type="button"
+              onClick={handleResume}
+              disabled={generating}
+              className="btn-primary disabled:opacity-60 disabled:cursor-wait"
+              title="Download a PDF resume of this site"
+            >
+              <FileText size={16} /> {generating ? 'Generating…' : 'Resume'}
             </button>
             <a href="#projects" className="btn-secondary">
               <FolderGit2 size={16} /> Projects
