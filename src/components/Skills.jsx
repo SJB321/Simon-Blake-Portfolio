@@ -10,7 +10,7 @@ export default function Skills() {
           eyebrow="Skills"
           title="What I have experience in"
           lead="Here are some of the languages and frameworks I have worked with.
-           If there is something specefic you are looking for please reach out!
+           If there is something specific you are looking for please reach out!
             I am confident in my ability to learn something new."
         />
 

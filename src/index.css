@@ -127,8 +127,8 @@ body.print-mode [href="#main"] {
 /* Cancel scroll-margin so anchors don't add space */
 body.print-mode .section {
   scroll-margin-top: 0 !important;
-  padding-top: 4pt !important;
-  padding-bottom: 4pt !important;
+  padding-top: 2pt !important;
+  padding-bottom: 2pt !important;
   margin: 0 !important;
 }
 
@@ -162,8 +162,15 @@ body.print-mode .print-only {
 body.print-mode #top {
   padding-top: 0 !important;
   padding-bottom: 4pt !important;
-  border-bottom: 1px solid #d4d4d4;
-  margin-bottom: 2pt;
+  margin-bottom: 0 !important;
+}
+
+/* Belt-and-suspenders: explicitly strip any text-decoration that
+   could render as an underline at the small sizes html2canvas uses. */
+body.print-mode .hero-availability,
+body.print-mode .hero-availability * {
+  text-decoration: none !important;
+  border: 0 !important;
 }
 
 body.print-mode #top h1 {
@@ -200,6 +207,16 @@ body.print-mode .section-title {
   font-size: 11pt !important;
   margin-top: 0 !important;
   margin-bottom: 1pt !important;
+  /* Keep the title with its content so we never orphan a heading
+     at the bottom of a page (was happening with Education). */
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+body.print-mode .section-eyebrow,
+body.print-mode .section-lead {
+  page-break-after: avoid;
+  break-after: avoid;
 }
 
 body.print-mode .section-eyebrow {
@@ -269,20 +286,35 @@ body.print-mode #about::after {
   clear: both;
 }
 
-/* SKILLS: 2-column grid */
+/* SKILLS: single-column in print so chips have full width and don't
+   wrap multi-line (which was making the Concepts card overflow). Each
+   card is short — 1pt vertical gain trades for visible-correctness. */
 body.print-mode #skills .grid {
-  display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
-  gap: 6pt 10pt !important;
+  display: block !important;
+}
+
+body.print-mode #skills .grid > * + * {
+  margin-top: 3pt !important;
 }
 
 body.print-mode #skills .card {
-  padding: 4pt 6pt !important;
+  padding: 3pt 6pt !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 8pt !important;
 }
 
 body.print-mode #skills h3 {
   font-size: 7.5pt !important;
-  margin-bottom: 2pt !important;
+  margin: 0 !important;
+  flex: 0 0 75pt !important;
+}
+
+body.print-mode #skills .card > ul {
+  margin: 0 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 3pt 5pt !important;
 }
 
 body.print-mode #skills .chip {
@@ -376,13 +408,22 @@ body.print-mode #education ul li {
   margin-top: 0 !important;
 }
 
-body.print-mode #experience {
-  page-break-inside: avoid;
-  break-inside: avoid;
-}
+/* Allow Experience to split across pages if needed — each <li> still
+   has page-break-inside: avoid so individual jobs stay intact. Without
+   this, the Education section gets shoved to its own page with massive
+   whitespace below. */
 
 body.print-mode ul li {
   margin-top: 0 !important;
+}
+
+/* Bullet dots: bump their size & vertical alignment so they don't
+   render as disconnected specks under text. */
+body.print-mode #about ul li > span:first-child,
+body.print-mode ol.border-l > li ul > li > span:first-child {
+  width: 3pt !important;
+  height: 3pt !important;
+  margin-top: 4pt !important;
 }
 
 body.print-mode .print-only p {
