@@ -57,6 +57,13 @@ export default function ProjectCard({ project }) {
         </ul>
       )}
 
+      {(links.github || links.demo) && (
+        <div className="hidden print-only mt-3 text-[10pt] text-stone-700 space-y-0.5">
+          {links.github && <p>GitHub: {links.github}</p>}
+          {links.demo && <p>Demo: {links.demo}</p>}
+        </div>
+      )}
+
       {tech?.length > 0 && (
         <div className="mt-auto pt-5 border-t border-stone-200">
           <p className="text-[11px] tracking-wide text-stone-500">

@@ -10,7 +10,7 @@ const channels = [
 
 export default function Contact() {
   return (
-    <section id="contact" className="section">
+    <section id="contact" className="section print:hidden">
       <div className="container-page max-w-3xl text-center">
         <Reveal>
           <p className="section-eyebrow">Contact</p>

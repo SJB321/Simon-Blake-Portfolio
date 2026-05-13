@@ -14,6 +14,11 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
 
+  const handleResume = () => {
+    setOpen(false)
+    window.print()
+  }
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
     onScroll()
@@ -49,9 +54,14 @@ export default function Navbar() {
             </li>
           ))}
           <li className="ml-2">
-            <a href="/resume.pdf" className="btn-secondary text-xs" target="_blank" rel="noreferrer">
+            <button
+              type="button"
+              onClick={handleResume}
+              className="btn-secondary text-xs"
+              title="Save the site as a PDF"
+            >
               Resume
-            </a>
+            </button>
           </li>
         </ul>
 
@@ -81,15 +91,13 @@ export default function Navbar() {
               </li>
             ))}
             <li className="pt-2">
-              <a
-                href="/resume.pdf"
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => setOpen(false)}
+              <button
+                type="button"
+                onClick={handleResume}
                 className="btn-secondary w-full"
               >
                 Resume
-              </a>
+              </button>
             </li>
           </ul>
         </div>

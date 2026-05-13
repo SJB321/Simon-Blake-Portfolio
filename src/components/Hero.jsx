@@ -2,11 +2,13 @@ import { ArrowRight, FileText, FolderGit2, Mail } from 'lucide-react'
 import { profile } from '../data/profile.js'
 
 export default function Hero() {
+  const handleResume = () => window.print()
+
   return (
     <section id="top" className="relative pt-32 sm:pt-40 pb-24">
       <div className="container-page">
         <div className="max-w-3xl">
-          <p className="font-serif italic text-base text-accent animate-fade-in">
+          <p className="font-serif italic text-base text-accent animate-fade-in print:hidden">
             Hello, my name is
           </p>
 
@@ -24,6 +26,19 @@ export default function Hero() {
             {profile.tagline}
           </h2>
 
+          {/* Print-only contact strip — visible only in the PDF output */}
+          <div className="hidden print-only mt-3 text-xs text-stone-700 leading-relaxed">
+            <p>
+              <span>{profile.email}</span>
+              <span className="mx-2 text-stone-400">·</span>
+              <span>{profile.github}</span>
+              <span className="mx-2 text-stone-400">·</span>
+              <span>{profile.linkedin}</span>
+              <span className="mx-2 text-stone-400">·</span>
+              <span>{profile.location}</span>
+            </p>
+          </div>
+
           <p
             className="mt-6 max-w-2xl text-stone-600 leading-relaxed animate-fade-up"
             style={{ animationDelay: '240ms' }}
@@ -35,9 +50,9 @@ export default function Hero() {
             className="mt-10 flex flex-wrap items-center gap-3 animate-fade-up"
             style={{ animationDelay: '320ms' }}
           >
-            <a href="/resume.pdf" target="_blank" rel="noreferrer" className="btn-primary">
+            <button type="button" onClick={handleResume} className="btn-primary" title="Save the site as a PDF">
               <FileText size={16} /> Resume
-            </a>
+            </button>
             <a href="#projects" className="btn-secondary">
               <FolderGit2 size={16} /> Projects
             </a>
@@ -47,10 +62,10 @@ export default function Hero() {
           </div>
 
           <p
-            className="mt-12 inline-flex items-center gap-2 text-xs text-stone-500 animate-fade-up"
+            className="hero-availability mt-12 inline-flex items-center gap-2 text-xs text-stone-500 animate-fade-up"
             style={{ animationDelay: '400ms' }}
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            <span className="hero-availability-dot h-1.5 w-1.5 rounded-full bg-accent" />
             {profile.availability}
             <ArrowRight size={12} className="text-stone-300" />
             seeking game development co-op
