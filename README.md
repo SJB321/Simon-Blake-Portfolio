@@ -1,4 +1,4 @@
-# Simon Blake — Portfolio
+# Simon Blake Portfolio
 
 Personal portfolio site for Simon Blake (Game Design & Development major at RIT).
 
