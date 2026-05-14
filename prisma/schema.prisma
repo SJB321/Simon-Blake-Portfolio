@@ -1,0 +1,116 @@
+// Prisma schema for the resume content database.
+//
+// Two flavors of model:
+//   1. Singleton sections (Profile, About, Education, Settings) — there's only
+//      ever one row. They use id = 1 as a convention so updates use upsert.
+//   2. Repeating sections (SkillGroup, Project, Experience) — multiple rows,
+//      ordered by an explicit `order` int so the admin can rearrange.
+//
+// Inner arrays-of-strings (interests, honors, coursework, tech, impact, items,
+// points) live as JSON columns instead of their own tables — they're always
+// fetched and saved with their parent, and over-normalizing buys nothing here.
+//
+// Migrations: this project uses `prisma db push` rather than full migrations,
+// since there's a single deployer (you). If multiple devs ever touch the DB,
+// switch to `prisma migrate dev` / `prisma migrate deploy`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")  // Pooled — for runtime queries
+  directUrl = env("DIRECT_URL")    // Direct — for migrations / db push
+}
+
+/// Hero & contact details. Singleton.
+model Profile {
+  id           Int      @id @default(1)
+  name         String
+  role         String
+  location     String
+  email        String
+  phone        String?
+  github       String?
+  linkedin     String?
+  availability String?
+  tagline      String?
+  intro        String   @db.Text
+  updatedAt    DateTime @updatedAt
+}
+
+/// "About me" prose. Singleton.
+/// - paragraphs: ordered array of paragraph strings
+/// - interests:  array of bullet strings
+model About {
+  id         Int      @id @default(1)
+  paragraphs Json
+  interests  Json
+  updatedAt  DateTime @updatedAt
+}
+
+/// Education record. Singleton (one school for now; convert to many-rows if needed later).
+model Education {
+  id         Int      @id @default(1)
+  school     String
+  college    String?
+  degree     String
+  location   String
+  period     String
+  gpa        String?
+  honors     Json     // string[]
+  coursework Json     // string[]
+  updatedAt  DateTime @updatedAt
+}
+
+/// One row per skill group ("Languages", "Tools", etc.). Many.
+model SkillGroup {
+  id        Int      @id @default(autoincrement())
+  title     String
+  items     Json     // string[]
+  order     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+}
+
+/// One row per project. Many.
+model Project {
+  id          Int      @id @default(autoincrement())
+  title       String
+  role        String
+  year        String
+  description String   @db.Text
+  impact      Json     // string[]
+  tech        Json     // string[]
+  githubUrl   String?
+  demoUrl     String?
+  order       Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@index([order])
+}
+
+/// One row per past role / job. Many.
+model Experience {
+  id        Int      @id @default(autoincrement())
+  role      String
+  company   String
+  location  String
+  period    String
+  points    Json     // string[]
+  order     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+}
+
+/// App-level settings. Singleton.
+/// passwordHash = null  → admin is unprotected (no password configured)
+/// passwordHash = "..." → bcrypt hash; admin endpoints require matching password
+model Settings {
+  id           Int      @id @default(1)
+  passwordHash String?
+  updatedAt    DateTime @updatedAt
+}

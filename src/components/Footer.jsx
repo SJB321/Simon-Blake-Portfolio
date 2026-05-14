@@ -1,7 +1,11 @@
 import { Github, Linkedin, Mail } from 'lucide-react'
-import { profile } from '../data/profile.js'
+import { useResumeData } from '../context/ResumeData.jsx'
 
 export default function Footer() {
+  const { data } = useResumeData()
+  const profile = data?.profile
+  if (!profile) return null
+
   return (
     <footer className="border-t border-stone-200 bg-white/60">
       <div className="container-page py-10 flex flex-col sm:flex-row items-center justify-between gap-6">

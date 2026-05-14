@@ -8,16 +8,19 @@ let inFlight = false
  * Render the resume as a vector PDF (selectable text, ATS-readable) and
  * stream it to the browser as a download.
  *
- * Uses @react-pdf/renderer to build the PDF from a declarative React tree
- * — independent of the live DOM, so styling decisions live in
- * src/pdf/ResumePdf.jsx, not in print-CSS.
+ * Pass the resume payload from useResumeData() — keeps DB I/O out of this
+ * module and lets us preview generation from the edit page if we ever want.
  */
-export async function generateResumePdf() {
+export async function generateResumePdf(data) {
   if (inFlight) return
+  if (!data) {
+    alert("Resume data isn't loaded yet. Wait a moment and try again.")
+    return
+  }
   inFlight = true
 
   try {
-    const blob = await pdf(React.createElement(ResumePdf)).toBlob()
+    const blob = await pdf(React.createElement(ResumePdf, { data })).toBlob()
     const url = URL.createObjectURL(blob)
 
     const link = document.createElement('a')

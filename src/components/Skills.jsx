@@ -1,8 +1,12 @@
 import Reveal from './Reveal.jsx'
 import SectionHeading from './SectionHeading.jsx'
-import { skillGroups } from '../data/skills.js'
+import { useResumeData } from '../context/ResumeData.jsx'
 
 export default function Skills() {
+  const { data } = useResumeData()
+  const skillGroups = data?.skillGroups || []
+  if (skillGroups.length === 0) return null
+
   return (
     <section id="skills" className="section">
       <div className="container-page">

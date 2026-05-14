@@ -1,16 +1,20 @@
 import { useState } from 'react'
 import { ArrowRight, FileText, FolderGit2, Mail } from 'lucide-react'
-import { profile } from '../data/profile.js'
+import { useResumeData } from '../context/ResumeData.jsx'
 import { generateResumePdf } from '../utils/generatePdf.js'
 
 export default function Hero() {
+  const { data } = useResumeData()
+  const profile = data?.profile
   const [generating, setGenerating] = useState(false)
+
+  if (!profile) return null
 
   const handleResume = async () => {
     if (generating) return
     setGenerating(true)
     try {
-      await generateResumePdf()
+      await generateResumePdf(data)
     } finally {
       setGenerating(false)
     }

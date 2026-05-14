@@ -8,11 +8,8 @@ import {
   Link,
 } from '@react-pdf/renderer'
 
-import { profile } from '../data/profile.js'
-import { skillGroups } from '../data/skills.js'
-import { projects } from '../data/projects.js'
-import { experience } from '../data/experience.js'
-import { education } from '../data/education.js'
+// Resume content is passed in as props now (sourced from the DB via the
+// ResumeData context). No more imports from src/data/*.
 
 // Font URLs — Vite bundles these as static assets and gives us their hashed URLs.
 import SourceSerifRegular from '@fontsource/source-serif-4/files/source-serif-4-latin-400-normal.woff?url'
@@ -211,17 +208,26 @@ const styles = StyleSheet.create({
 })
 
 // Strip the protocol so URLs read cleaner: https://github.com/x → github.com/x
-const strip = (url) => url.replace(/^https?:\/\//, '').replace(/\/$/, '')
+const strip = (url) => (url || '').replace(/^https?:\/\//, '').replace(/\/$/, '')
 
-// Tighten up the LinkedIn handle in profile (which is a full URL) into a path.
-const linkedinDisplay = strip(profile.linkedin)
-const githubDisplay = strip(profile.github)
+export function ResumePdf({ data }) {
+  if (!data) return null
+  const { profile, education, skillGroups = [], projects = [], experience = [] } = data
+  if (!profile) return null
 
-export function ResumePdf() {
   // Skip placeholder projects — only real work belongs on a resume.
   const realProjects = projects.filter(
-    (p) => !p.title.toLowerCase().includes('placeholder'),
+    (p) => !(p.title || '').toLowerCase().includes('placeholder'),
   )
+
+  // Project shape from DB uses flat githubUrl/demoUrl; normalize for downstream use.
+  const projectsNormalized = realProjects.map((p) => ({
+    ...p,
+    links: { github: p.githubUrl, demo: p.demoUrl },
+  }))
+
+  const linkedinDisplay = strip(profile.linkedin)
+  const githubDisplay = strip(profile.github)
 
   return (
     <Document
@@ -238,18 +244,24 @@ export function ResumePdf() {
           </Text>
           <Text style={styles.contactLine}>
             {profile.email}
-            {'  ·  '}
-            {profile.phone}
-            {'  ·  '}
-            {profile.location}
-            {'  ·  '}
-            <Link src={profile.github} style={{ color: BODY }}>
-              {githubDisplay}
-            </Link>
-            {'  ·  '}
-            <Link src={profile.linkedin} style={{ color: BODY }}>
-              {linkedinDisplay}
-            </Link>
+            {profile.phone ? `  ·  ${profile.phone}` : ''}
+            {profile.location ? `  ·  ${profile.location}` : ''}
+            {profile.github && (
+              <>
+                {'  ·  '}
+                <Link src={profile.github} style={{ color: BODY }}>
+                  {githubDisplay}
+                </Link>
+              </>
+            )}
+            {profile.linkedin && (
+              <>
+                {'  ·  '}
+                <Link src={profile.linkedin} style={{ color: BODY }}>
+                  {linkedinDisplay}
+                </Link>
+              </>
+            )}
           </Text>
         </View>
 
@@ -263,26 +275,32 @@ export function ResumePdf() {
         </Text>
 
         {/* ── EDUCATION ──────────────────────────────────── */}
-        <Text style={styles.sectionHeading}>Education</Text>
-        <View style={styles.rowBetween}>
-          <Text style={styles.eduSchool}>{education.school}</Text>
-          <Text style={styles.eduPeriod}>{education.period}</Text>
-        </View>
-        <Text style={styles.eduDegree}>
-          {education.degree}
-          {'  ·  '}
-          GPA {education.gpa}
-          {'  ·  '}
-          {education.location}
-        </Text>
-        <Text style={styles.eduSecondary}>
-          <Text style={{ fontWeight: 700, color: INK }}>Honors: </Text>
-          {education.honors.join('  ·  ')}
-        </Text>
-        <Text style={styles.eduSecondary}>
-          <Text style={{ fontWeight: 700, color: INK }}>Coursework: </Text>
-          {education.coursework.join(', ')}
-        </Text>
+        {education && (
+          <>
+            <Text style={styles.sectionHeading}>Education</Text>
+            <View style={styles.rowBetween}>
+              <Text style={styles.eduSchool}>{education.school}</Text>
+              <Text style={styles.eduPeriod}>{education.period}</Text>
+            </View>
+            <Text style={styles.eduDegree}>
+              {education.degree}
+              {education.gpa ? `  ·  GPA ${education.gpa}` : ''}
+              {education.location ? `  ·  ${education.location}` : ''}
+            </Text>
+            {Array.isArray(education.honors) && education.honors.length > 0 && (
+              <Text style={styles.eduSecondary}>
+                <Text style={{ fontWeight: 700, color: INK }}>Honors: </Text>
+                {education.honors.join('  ·  ')}
+              </Text>
+            )}
+            {Array.isArray(education.coursework) && education.coursework.length > 0 && (
+              <Text style={styles.eduSecondary}>
+                <Text style={{ fontWeight: 700, color: INK }}>Coursework: </Text>
+                {education.coursework.join(', ')}
+              </Text>
+            )}
+          </>
+        )}
 
         {/* ── TECHNICAL SKILLS ───────────────────────────── */}
         <Text style={styles.sectionHeading}>Technical Skills</Text>
@@ -295,8 +313,8 @@ export function ResumePdf() {
 
         {/* ── PROJECTS ───────────────────────────────────── */}
         <Text style={styles.sectionHeading}>Projects</Text>
-        {realProjects.map((project) => (
-          <View key={project.title} style={styles.entry}>
+        {projectsNormalized.map((project) => (
+          <View key={project.id ?? project.title} style={styles.entry}>
             <View style={styles.rowBetween}>
               <Text>
                 <Text style={styles.entryTitle}>{project.title}</Text>
@@ -348,7 +366,7 @@ export function ResumePdf() {
         {/* ── EXPERIENCE ─────────────────────────────────── */}
         <Text style={styles.sectionHeading}>Experience</Text>
         {experience.map((job, i) => (
-          <View key={i} style={styles.entry}>
+          <View key={job.id ?? i} style={styles.entry}>
             <View style={styles.rowBetween}>
               <Text>
                 <Text style={styles.entryTitle}>{job.role}</Text>

@@ -1,14 +1,28 @@
 import { ArrowUpRight, Github, Linkedin, Mail } from 'lucide-react'
 import Reveal from './Reveal.jsx'
-import { profile } from '../data/profile.js'
-
-const channels = [
-  { icon: Mail, label: 'Email', value: profile.email, href: `mailto:${profile.email}` },
-  { icon: Linkedin, label: 'LinkedIn', value: 'Connect on LinkedIn', href: profile.linkedin },
-  { icon: Github, label: 'GitHub', value: 'See what I’m building', href: profile.github },
-]
+import { useResumeData } from '../context/ResumeData.jsx'
 
 export default function Contact() {
+  const { data } = useResumeData()
+  const profile = data?.profile
+  if (!profile) return null
+
+  const channels = [
+    { icon: Mail, label: 'Email', value: profile.email, href: `mailto:${profile.email}` },
+    profile.linkedin && {
+      icon: Linkedin,
+      label: 'LinkedIn',
+      value: 'Connect on LinkedIn',
+      href: profile.linkedin,
+    },
+    profile.github && {
+      icon: Github,
+      label: 'GitHub',
+      value: "See what I'm building",
+      href: profile.github,
+    },
+  ].filter(Boolean)
+
   return (
     <section id="contact" className="section no-print">
       <div className="container-page max-w-3xl text-center">
@@ -18,8 +32,11 @@ export default function Contact() {
             Let&apos;s build something.
           </h2>
           <p className="mt-5 text-stone-600 leading-relaxed">
-            I&apos;m looking for a Summer 2027 game development co-op. If you&apos;re hiring,
-            collaborating on a project, or just want to talk about games — my inbox is open.
+            {profile.availability
+              ? `${profile.availability}. `
+              : ''}
+            If you&apos;re hiring, collaborating on a project, or just want to talk about games —
+            my inbox is open.
           </p>
 
           <a href={`mailto:${profile.email}`} className="btn-primary mt-8">

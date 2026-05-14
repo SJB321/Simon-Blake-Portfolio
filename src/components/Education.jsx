@@ -1,9 +1,16 @@
 import { Award, BookOpen, GraduationCap, MapPin } from 'lucide-react'
 import Reveal from './Reveal.jsx'
 import SectionHeading from './SectionHeading.jsx'
-import { education } from '../data/education.js'
+import { useResumeData } from '../context/ResumeData.jsx'
 
 export default function Education() {
+  const { data } = useResumeData()
+  const education = data?.education
+  if (!education) return null
+
+  const honors = Array.isArray(education.honors) ? education.honors : []
+  const coursework = Array.isArray(education.coursework) ? education.coursework : []
+
   return (
     <section id="education" className="section">
       <div className="container-page">
@@ -39,7 +46,7 @@ export default function Education() {
                   <Award size={14} /> Honors
                 </h4>
                 <ul className="mt-3 space-y-1.5 text-sm text-stone-700">
-                  {education.honors.map((h) => (
+                  {honors.map((h) => (
                     <li key={h} className="flex items-start gap-2">
                       <GraduationCap size={14} className="mt-1 shrink-0 text-accent" />
                       {h}
@@ -53,7 +60,7 @@ export default function Education() {
                   <BookOpen size={14} /> Relevant coursework
                 </h4>
                 <ul className="mt-3 flex flex-wrap gap-2">
-                  {education.coursework.map((c) => (
+                  {coursework.map((c) => (
                     <li key={c} className="chip">
                       {c}
                     </li>
