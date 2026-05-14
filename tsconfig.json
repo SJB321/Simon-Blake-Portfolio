@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    // Pragmatic strictness — catches the bugs that matter without
+    // forcing every callback parameter to be annotated.
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // Vite-style asset imports (`?url` on font files) — see env.d.ts
+    "types": ["vite/client", "node"]
+  },
+  "include": ["src", "api"],
+  "exclude": ["node_modules", "dist", "prisma/seed.js"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}
