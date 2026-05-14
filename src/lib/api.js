@@ -8,11 +8,15 @@ async function request(url, options = {}) {
   const res = await fetch(url, { ...options, headers })
   if (!res.ok) {
     const body = await json(res)
-    // Include the server's `detail` field (which we set on 500s) so the UI
-    // can show the actual error message instead of a generic "Internal server
-    // error". Without this we'd have to read Vercel logs to debug.
+    // Surface as much of the server's error as we have. `detail` is set on
+    // 500s; `issues` is the array of validation messages on 400s.
     const baseMessage = body?.error || `${res.status} ${res.statusText}`
-    const message = body?.detail ? `${baseMessage}: ${body.detail}` : baseMessage
+    const extras =
+      body?.detail ||
+      (Array.isArray(body?.issues) && body.issues.length
+        ? body.issues.join('; ')
+        : null)
+    const message = extras ? `${baseMessage}: ${extras}` : baseMessage
     const err = new Error(message)
     err.status = res.status
     err.detail = body

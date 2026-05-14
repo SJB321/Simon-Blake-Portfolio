@@ -19,12 +19,14 @@ export default function EditResume() {
   const location = useLocation()
   const { data, loading, error, refetch } = useResumeData()
 
-  // Password arrives from the public page's password modal. If someone hits
-  // /edit directly, we bounce them back home — no shortcut around the prompt.
-  const password = location.state?.password
+  // Password arrives from the public page's password modal. We hold a
+  // mutable copy in state so PasswordForm can update it after a change —
+  // otherwise the next Save would send the stale password and 401.
+  const initialPassword = location.state?.password
+  const [password, setPassword] = useState(initialPassword)
   useEffect(() => {
-    if (password === undefined) navigate('/', { replace: true })
-  }, [password, navigate])
+    if (initialPassword === undefined) navigate('/', { replace: true })
+  }, [initialPassword, navigate])
 
   // Local working copy of the resume payload — initialized from context once
   // data loads. Edits stay here until Save; Cancel just discards by leaving.
@@ -43,7 +45,7 @@ export default function EditResume() {
   if (error) {
     return <CenteredMessage error>Couldn't load — {error.message}</CenteredMessage>
   }
-  if (password === undefined) return null // redirecting
+  if (initialPassword === undefined) return null // redirecting
 
   const update = (path, value) => {
     setDraft((d) => setIn(d, path, value))
@@ -113,7 +115,10 @@ export default function EditResume() {
         </Section>
 
         <Section title="Admin password" description="Set or change the password that gates this edit page.">
-          <PasswordForm currentPassword={password} />
+          <PasswordForm
+            currentPassword={password}
+            onPasswordChanged={setPassword}
+          />
         </Section>
       </main>
 
@@ -203,9 +208,18 @@ function CenteredMessage({ children, error }) {
    Reusable form atoms
    ----------------------------------------------------------- */
 
+// Tailwind requires class names to appear as complete literals at build time;
+// we can't use `col-span-${n}` interpolation. So we hand-map the values we
+// actually use to their static classes.
+const SPAN_CLASSES = {
+  1: '',
+  2: 'col-span-2',
+  3: 'col-span-3',
+}
+
 function Field({ label, hint, children, span = 1 }) {
   return (
-    <label className={`block ${span === 2 ? 'col-span-2' : ''}`}>
+    <label className={`block ${SPAN_CLASSES[span] || ''}`}>
       <span className="block text-xs font-medium text-stone-700">{label}</span>
       <div className="mt-1">{children}</div>
       {hint && <span className="block mt-1 text-[11px] text-stone-500">{hint}</span>}
@@ -505,7 +519,7 @@ function EducationForm({ education, onChange }) {
   )
 }
 
-function PasswordForm({ currentPassword }) {
+function PasswordForm({ currentPassword, onPasswordChanged }) {
   const [current, setCurrent] = useState(currentPassword ?? '')
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -528,6 +542,9 @@ function PasswordForm({ currentPassword }) {
       setCurrent(next)
       setNext('')
       setConfirm('')
+      // Critical: tell the parent so subsequent saves use the new password
+      // instead of the now-invalidated original one.
+      onPasswordChanged?.(next)
     } catch (err) {
       setError(err.message || 'Failed to change password')
     } finally {
