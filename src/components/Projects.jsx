@@ -17,6 +17,7 @@ export default function Projects() {
     description: p.description,
     impact: p.impact ?? [],
     tech: p.tech ?? [],
+    imageUrl: p.imageUrl || null,
     links: {
       github: p.githubUrl || undefined,
       demo: p.demoUrl || undefined,

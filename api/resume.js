@@ -84,8 +84,8 @@ async function putResume(req, res) {
     }),
     prisma.education.upsert({
       where: { id: 1 },
-      create: { id: 1, ...cleanEducation },
-      update: cleanEducation,
+      create: { id: 1, ...cleanEducation, imageUrl: emptyToNull(cleanEducation?.imageUrl) },
+      update: { ...cleanEducation, imageUrl: emptyToNull(cleanEducation?.imageUrl) },
     }),
 
     prisma.skillGroup.deleteMany(),
@@ -108,6 +108,7 @@ async function putResume(req, res) {
         tech: p.tech ?? [],
         githubUrl: emptyToNull(p.githubUrl),
         demoUrl: emptyToNull(p.demoUrl),
+        imageUrl: emptyToNull(p.imageUrl),
         order: i,
       })),
     }),
@@ -120,6 +121,7 @@ async function putResume(req, res) {
         location: e.location,
         period: e.period,
         points: e.points ?? [],
+        imageUrl: emptyToNull(e.imageUrl),
         order: i,
       })),
     }),

@@ -66,6 +66,7 @@ model Education {
   gpa        String?
   honors     Json     // string[]
   coursework Json     // string[]
+  imageUrl   String?  // Optional school/department image
   updatedAt  DateTime @updatedAt
 }
 
@@ -91,6 +92,7 @@ model Project {
   tech        Json     // string[]
   githubUrl   String?
   demoUrl     String?
+  imageUrl    String?  // Optional cover image (Supabase Storage URL)
   order       Int      @default(0)
   updatedAt   DateTime @updatedAt
 
@@ -105,6 +107,7 @@ model Experience {
   location  String
   period    String
   points    Json     // string[]
+  imageUrl  String?  // Optional small image / company logo
   order     Int      @default(0)
   updatedAt DateTime @updatedAt
 

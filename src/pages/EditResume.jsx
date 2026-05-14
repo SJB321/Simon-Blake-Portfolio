@@ -13,6 +13,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Check, Plus, Trash2, KeyRound } from 'lucide-react'
 import { useResumeData } from '../context/ResumeData.jsx'
 import { api } from '../lib/api.js'
+import ImageManager, { ImagePicker } from '../components/edit/ImageManager.jsx'
 
 export default function EditResume() {
   const navigate = useNavigate()
@@ -78,6 +79,13 @@ export default function EditResume() {
       <EditHeader onBack={handleCancel} />
 
       <main className="container-page max-w-4xl py-8 space-y-8 pb-32">
+        <Section
+          title="Image library"
+          description="Upload and manage images that other sections can reference. Stored in Supabase Storage."
+        >
+          <ImageManager password={password} />
+        </Section>
+
         <Section title="Hero / Profile" description="Name, role, contact info, and the opening tagline.">
           <ProfileForm profile={draft.profile} onChange={(v) => update(['profile'], v)} />
         </Section>
@@ -97,6 +105,7 @@ export default function EditResume() {
           <ProjectsForm
             projects={draft.projects}
             onChange={(v) => update(['projects'], v)}
+            password={password}
           />
         </Section>
 
@@ -104,6 +113,7 @@ export default function EditResume() {
           <ExperienceForm
             entries={draft.experience}
             onChange={(v) => update(['experience'], v)}
+            password={password}
           />
         </Section>
 
@@ -111,6 +121,7 @@ export default function EditResume() {
           <EducationForm
             education={draft.education}
             onChange={(v) => update(['education'], v)}
+            password={password}
           />
         </Section>
 
@@ -416,7 +427,7 @@ function SkillsForm({ groups, onChange }) {
   )
 }
 
-function ProjectsForm({ projects, onChange }) {
+function ProjectsForm({ projects, onChange, password }) {
   return (
     <ItemList
       items={projects || []}
@@ -424,7 +435,7 @@ function ProjectsForm({ projects, onChange }) {
       addLabel="Add project"
       makeEmpty={() => ({
         title: '', role: '', year: '', description: '',
-        impact: [], tech: [], githubUrl: '', demoUrl: '',
+        impact: [], tech: [], githubUrl: '', demoUrl: '', imageUrl: '',
       })}
       renderItem={(project, patch) => (
         <div className="space-y-3 pr-8">
@@ -456,19 +467,25 @@ function ProjectsForm({ projects, onChange }) {
           <Field label="Impact / bullets">
             <StringList values={project.impact} onChange={(v) => patch({ impact: v })} placeholder="What you owned and what it produced." />
           </Field>
+          <ImagePicker
+            label="Cover image (optional)"
+            value={project.imageUrl ?? ''}
+            onChange={(url) => patch({ imageUrl: url })}
+            password={password}
+          />
         </div>
       )}
     />
   )
 }
 
-function ExperienceForm({ entries, onChange }) {
+function ExperienceForm({ entries, onChange, password }) {
   return (
     <ItemList
       items={entries || []}
       onChange={onChange}
       addLabel="Add experience"
-      makeEmpty={() => ({ role: '', company: '', location: '', period: '', points: [] })}
+      makeEmpty={() => ({ role: '', company: '', location: '', period: '', points: [], imageUrl: '' })}
       renderItem={(entry, patch) => (
         <div className="space-y-3 pr-8">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -488,15 +505,22 @@ function ExperienceForm({ entries, onChange }) {
           <Field label="Bullets">
             <StringList values={entry.points} onChange={(v) => patch({ points: v })} placeholder="What you did and what it taught you." />
           </Field>
+          <ImagePicker
+            label="Logo / image (optional)"
+            value={entry.imageUrl ?? ''}
+            onChange={(url) => patch({ imageUrl: url })}
+            password={password}
+          />
         </div>
       )}
     />
   )
 }
 
-function EducationForm({ education, onChange }) {
+function EducationForm({ education, onChange, password }) {
   const safeEdu = education || {
-    school: '', college: '', degree: '', location: '', period: '', gpa: '', honors: [], coursework: [],
+    school: '', college: '', degree: '', location: '', period: '', gpa: '',
+    honors: [], coursework: [], imageUrl: '',
   }
   const set = (key, val) => onChange({ ...safeEdu, [key]: val })
   return (
@@ -515,6 +539,12 @@ function EducationForm({ education, onChange }) {
       <Field label="Relevant coursework">
         <StringList values={safeEdu.coursework} onChange={(v) => set('coursework', v)} placeholder="C#/C++ fundamentals" />
       </Field>
+      <ImagePicker
+        label="School image / logo (optional)"
+        value={safeEdu.imageUrl ?? ''}
+        onChange={(url) => set('imageUrl', url)}
+        password={password}
+      />
     </div>
   )
 }

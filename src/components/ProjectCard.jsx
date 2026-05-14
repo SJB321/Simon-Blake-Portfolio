@@ -1,10 +1,22 @@
 import { ArrowUpRight, Github, ExternalLink } from 'lucide-react'
 
 export default function ProjectCard({ project }) {
-  const { title, role, year, description, impact, tech, links = {} } = project
+  const { title, role, year, description, impact, tech, links = {}, imageUrl } = project
 
   return (
-    <article className="card group p-6 sm:p-7 flex flex-col h-full hover:-translate-y-0.5">
+    <article className="card group flex flex-col h-full overflow-hidden hover:-translate-y-0.5">
+      {imageUrl && (
+        <div className="relative aspect-[16/9] w-full overflow-hidden border-b border-stone-200 bg-stone-100 no-print">
+          <img
+            src={imageUrl}
+            alt={`${title} preview`}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </div>
+      )}
+
+      <div className="flex flex-col flex-1 p-6 sm:p-7">
       <header className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-wider text-accent font-medium">
@@ -71,6 +83,7 @@ export default function ProjectCard({ project }) {
           </p>
         </div>
       )}
+      </div>
     </article>
   )
 }

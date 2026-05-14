@@ -53,4 +53,49 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ currentPassword, newPassword }),
     }),
+
+  // ── Image library ──────────────────────────────────────────
+  // Read the full list (admin password required to discourage scraping).
+  listImages: (password) =>
+    request('/api/images', {
+      headers: { 'X-Admin-Password': password ?? '' },
+    }),
+
+  /**
+   * Upload a File (from a <input type="file">) by reading it as base64 first.
+   * Server decodes and pushes to Supabase Storage with a hashed unique name.
+   */
+  uploadImage: async (file, password) => {
+    const dataBase64 = await fileToBase64(file)
+    return request('/api/images', {
+      method: 'POST',
+      headers: { 'X-Admin-Password': password ?? '' },
+      body: JSON.stringify({
+        filename: file.name,
+        contentType: file.type,
+        dataBase64,
+      }),
+    })
+  },
+
+  deleteImage: (filename, password) =>
+    request('/api/images', {
+      method: 'DELETE',
+      headers: { 'X-Admin-Password': password ?? '' },
+      body: JSON.stringify({ filename }),
+    }),
+}
+
+/** Read a File into a base64 string (no `data:` prefix). */
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result // "data:image/png;base64,iVBORw0KGgo..."
+      const comma = result.indexOf(',')
+      resolve(comma >= 0 ? result.slice(comma + 1) : result)
+    }
+    reader.onerror = () => reject(reader.error || new Error('Read failed'))
+    reader.readAsDataURL(file)
+  })
 }

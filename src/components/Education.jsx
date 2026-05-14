@@ -19,17 +19,27 @@ export default function Education() {
         <Reveal className="mt-12">
           <div className="card p-6 sm:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-wider text-accent font-medium">
-                  {education.degree}
-                </p>
-                <h3 className="mt-1 font-serif text-xl sm:text-2xl font-semibold text-stone-900">
-                  {education.school}
-                </h3>
-                <p className="mt-1 text-sm text-stone-600">{education.college}</p>
-                <p className="mt-2 flex items-center gap-1.5 text-xs text-stone-500">
-                  <MapPin size={12} /> {education.location}
-                </p>
+              <div className="flex items-start gap-4 min-w-0">
+                {education.imageUrl && (
+                  <img
+                    src={education.imageUrl}
+                    alt={`${education.school} mark`}
+                    loading="lazy"
+                    className="h-14 w-14 sm:h-16 sm:w-16 rounded-md border border-stone-200 bg-stone-50 object-cover shrink-0 no-print"
+                  />
+                )}
+                <div className="min-w-0">
+                  <p className="text-xs uppercase tracking-wider text-accent font-medium">
+                    {education.degree}
+                  </p>
+                  <h3 className="mt-1 font-serif text-xl sm:text-2xl font-semibold text-stone-900">
+                    {education.school}
+                  </h3>
+                  <p className="mt-1 text-sm text-stone-600">{education.college}</p>
+                  <p className="mt-2 flex items-center gap-1.5 text-xs text-stone-500">
+                    <MapPin size={12} /> {education.location}
+                  </p>
+                </div>
               </div>
 
               <div className="text-right">

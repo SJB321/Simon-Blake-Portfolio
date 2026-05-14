@@ -20,6 +20,7 @@
     "@fontsource/source-serif-4": "^5.2.9",
     "@prisma/client": "^6.19.3",
     "@react-pdf/renderer": "^4.5.1",
+    "@supabase/supabase-js": "^2.105.4",
     "bcryptjs": "^3.0.3",
     "lucide-react": "^0.378.0",
     "pako": "^1.0.11",
