@@ -15,7 +15,12 @@
 // switch to `prisma migrate dev` / `prisma migrate deploy`.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // `native` builds for your dev machine; the second entry builds the Linux
+  // binary Vercel needs at runtime. Without it the deployed function can't
+  // find a Prisma engine that matches its OS and crashes with "Query engine
+  // library for current platform could not be located".
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
