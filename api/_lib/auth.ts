@@ -19,12 +19,6 @@ export async function getPasswordHash(): Promise<string | null> {
   return row?.passwordHash || null
 }
 
-/** True if no admin password is configured. */
-export async function isAdminOpen(): Promise<boolean> {
-  const hash = await getPasswordHash()
-  return !hash
-}
-
 /**
  * Verify a candidate password against the stored hash.
  * Returns true if the candidate matches, OR if no password is set

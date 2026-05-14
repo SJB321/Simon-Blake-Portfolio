@@ -18,5 +18,9 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['@react-pdf/renderer'],
+    // Server-only deps used by the /api Vercel functions — these should
+    // never reach the browser bundle, so don't waste time pre-bundling them
+    // for the dev server. (They were getting picked up via the api/ folder.)
+    exclude: ['@prisma/client', 'bcryptjs', '@supabase/supabase-js'],
   },
 })
