@@ -42,6 +42,7 @@ model Profile {
   availability String?
   tagline      String?
   intro        String   @db.Text
+  imageUrl     String?  // Profile photo (Supabase Storage URL). Falls back to /Profile.jpeg if unset.
   updatedAt    DateTime @updatedAt
 }
 

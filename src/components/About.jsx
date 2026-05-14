@@ -5,10 +5,15 @@ import { useResumeData } from '../context/ResumeData.jsx'
 export default function About() {
   const { data } = useResumeData()
   const about = data?.about
+  const profile = data?.profile
   if (!about) return null
 
   const paragraphs = Array.isArray(about.paragraphs) ? about.paragraphs : []
   const interests = Array.isArray(about.interests) ? about.interests : []
+  // Use the uploaded profile image if one is set; otherwise fall back to the
+  // static asset in /public so the layout never has an empty image frame.
+  const photoUrl = profile?.imageUrl || '/Profile.jpeg'
+  const photoAlt = profile?.name ? `${profile.name} portrait` : 'Profile photo'
 
   return (
     <section id="about" className="section">
@@ -21,8 +26,8 @@ export default function About() {
               <div className="absolute inset-0 translate-x-3 translate-y-3 rounded-xl border border-accent/40 transition-transform duration-300 group-hover:translate-x-2 group-hover:translate-y-2 no-print" />
               <div className="relative overflow-hidden rounded-xl border border-stone-200 bg-stone-100 aspect-[4/5]">
                 <img
-                  src="/Profile.jpeg"
-                  alt="Simon Blake"
+                  src={photoUrl}
+                  alt={photoAlt}
                   className="absolute inset-0 h-full w-full object-cover"
                 />
               </div>

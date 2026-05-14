@@ -86,8 +86,12 @@ export default function EditResume() {
           <ImageManager password={password} />
         </Section>
 
-        <Section title="Hero / Profile" description="Name, role, contact info, and the opening tagline.">
-          <ProfileForm profile={draft.profile} onChange={(v) => update(['profile'], v)} />
+        <Section title="Hero / Profile" description="Name, role, contact info, profile photo, and the opening tagline.">
+          <ProfileForm
+            profile={draft.profile}
+            onChange={(v) => update(['profile'], v)}
+            password={password}
+          />
         </Section>
 
         <Section title="About" description="Narrative paragraphs and your areas of interest.">
@@ -333,24 +337,32 @@ function ItemList({ items, onChange, renderItem, makeEmpty, addLabel = 'Add item
    Section forms
    ----------------------------------------------------------- */
 
-function ProfileForm({ profile, onChange }) {
+function ProfileForm({ profile, onChange, password }) {
   const set = (key, val) => onChange({ ...profile, [key]: val })
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <Field label="Name *"><Input value={profile.name ?? ''} onChange={(e) => set('name', e.target.value)} /></Field>
-      <Field label="Role / title"><Input value={profile.role ?? ''} onChange={(e) => set('role', e.target.value)} /></Field>
-      <Field label="Email *"><Input type="email" value={profile.email ?? ''} onChange={(e) => set('email', e.target.value)} /></Field>
-      <Field label="Phone"><Input value={profile.phone ?? ''} onChange={(e) => set('phone', e.target.value)} /></Field>
-      <Field label="Location"><Input value={profile.location ?? ''} onChange={(e) => set('location', e.target.value)} /></Field>
-      <Field label="Availability"><Input value={profile.availability ?? ''} onChange={(e) => set('availability', e.target.value)} placeholder="Available Summer 2027" /></Field>
-      <Field label="GitHub URL"><Input value={profile.github ?? ''} onChange={(e) => set('github', e.target.value)} placeholder="https://github.com/..." /></Field>
-      <Field label="LinkedIn URL"><Input value={profile.linkedin ?? ''} onChange={(e) => set('linkedin', e.target.value)} placeholder="https://www.linkedin.com/in/..." /></Field>
-      <Field label="Tagline" span={2}>
-        <Input value={profile.tagline ?? ''} onChange={(e) => set('tagline', e.target.value)} placeholder="I build games for the love of the game." />
-      </Field>
-      <Field label="Intro paragraph (hero)" span={2} hint="Appears under the tagline on the public site.">
-        <Textarea rows={3} value={profile.intro ?? ''} onChange={(e) => set('intro', e.target.value)} />
-      </Field>
+    <div className="space-y-4">
+      <ImagePicker
+        label="Profile photo (optional)"
+        value={profile.imageUrl ?? ''}
+        onChange={(url) => set('imageUrl', url)}
+        password={password}
+      />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Name *"><Input value={profile.name ?? ''} onChange={(e) => set('name', e.target.value)} /></Field>
+        <Field label="Role / title"><Input value={profile.role ?? ''} onChange={(e) => set('role', e.target.value)} /></Field>
+        <Field label="Email *"><Input type="email" value={profile.email ?? ''} onChange={(e) => set('email', e.target.value)} /></Field>
+        <Field label="Phone"><Input value={profile.phone ?? ''} onChange={(e) => set('phone', e.target.value)} /></Field>
+        <Field label="Location"><Input value={profile.location ?? ''} onChange={(e) => set('location', e.target.value)} /></Field>
+        <Field label="Availability"><Input value={profile.availability ?? ''} onChange={(e) => set('availability', e.target.value)} placeholder="Available Summer 2027" /></Field>
+        <Field label="GitHub URL"><Input value={profile.github ?? ''} onChange={(e) => set('github', e.target.value)} placeholder="https://github.com/..." /></Field>
+        <Field label="LinkedIn URL"><Input value={profile.linkedin ?? ''} onChange={(e) => set('linkedin', e.target.value)} placeholder="https://www.linkedin.com/in/..." /></Field>
+        <Field label="Tagline" span={2}>
+          <Input value={profile.tagline ?? ''} onChange={(e) => set('tagline', e.target.value)} placeholder="I build games for the love of the game." />
+        </Field>
+        <Field label="Intro paragraph (hero)" span={2} hint="Appears under the tagline on the public site.">
+          <Textarea rows={3} value={profile.intro ?? ''} onChange={(e) => set('intro', e.target.value)} />
+        </Field>
+      </div>
     </div>
   )
 }
