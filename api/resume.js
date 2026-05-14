@@ -35,8 +35,10 @@ async function getResume(res) {
     prisma.experience.findMany({ orderBy: { order: 'asc' } }),
   ])
 
-  // Cache for 60s at the edge but always revalidate — public data, low write rate
-  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300')
+  // Don't cache at the edge — content is editable and we need post-save
+  // refetches to see the latest data immediately. The function is cheap
+  // (one parallel Prisma read) so the perf cost is negligible.
+  res.setHeader('Cache-Control', 'no-store, must-revalidate')
 
   return res.status(200).json({
     profile,

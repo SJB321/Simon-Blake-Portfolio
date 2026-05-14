@@ -14,11 +14,14 @@ export function ResumeDataProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const load = useCallback(async () => {
+  // `opts.fresh` forces a cache-busted fetch — used by the edit page after
+  // a save so the UI shows the just-written content immediately rather than
+  // a possibly-cached prior version.
+  const load = useCallback(async (opts = {}) => {
     setLoading(true)
     setError(null)
     try {
-      const payload = await api.getResume()
+      const payload = await api.getResume(opts)
       setData(payload)
     } catch (err) {
       console.error('[ResumeData] load failed:', err)

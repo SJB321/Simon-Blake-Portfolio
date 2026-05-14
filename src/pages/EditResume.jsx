@@ -59,8 +59,13 @@ export default function EditResume() {
     setSaveSuccess(false)
     try {
       await api.putResume(draft, password)
+      // Bypass any cache so the just-saved data is the version we re-render.
+      // Without this, an edge cache could return the pre-save snapshot and
+      // make the change look like it didn't apply.
+      const fresh = await api.getResume({ fresh: true })
+      setDraft(deepClone(fresh))
+      await refetch({ fresh: true })
       setSaveSuccess(true)
-      await refetch()
       // Auto-hide the success banner after a moment
       setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err) {

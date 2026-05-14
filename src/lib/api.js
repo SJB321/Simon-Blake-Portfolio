@@ -26,8 +26,16 @@ async function request(url, options = {}) {
 }
 
 export const api = {
-  /** Load the full resume payload — singletons + lists. */
-  getResume: () => request('/api/resume'),
+  /**
+   * Load the full resume payload — singletons + lists.
+   * `fresh: true` adds a cache-busting query string so an edge/CDN/browser
+   * cache won't return stale data after a save.
+   */
+  getResume: ({ fresh = false } = {}) => {
+    const url = fresh ? `/api/resume?t=${Date.now()}` : '/api/resume'
+    const headers = fresh ? { 'Cache-Control': 'no-cache' } : {}
+    return request(url, { headers })
+  },
 
   /**
    * Save the full resume. Admin password is sent as a header (held in memory
