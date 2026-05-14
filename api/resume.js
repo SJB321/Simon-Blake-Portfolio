@@ -76,8 +76,8 @@ async function putResume(req, res) {
   await prisma.$transaction([
     prisma.profile.upsert({
       where: { id: 1 },
-      create: { id: 1, ...cleanProfile },
-      update: cleanProfile,
+      create: { id: 1, ...cleanProfile, imageUrl: emptyToNull(cleanProfile?.imageUrl) },
+      update: { ...cleanProfile, imageUrl: emptyToNull(cleanProfile?.imageUrl) },
     }),
     prisma.about.upsert({
       where: { id: 1 },

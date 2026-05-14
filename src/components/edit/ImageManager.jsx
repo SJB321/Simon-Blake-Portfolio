@@ -11,8 +11,30 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Copy, Trash2, Upload, Image as ImageIcon, X } from 'lucide-react'
 import { api } from '../../lib/api.js'
+import { useResumeData } from '../../context/ResumeData.jsx'
+
+/**
+ * Walk the resume data and report every section currently pointing at the
+ * given image URL. Used to warn the admin before deletion.
+ */
+function findReferences(data, url) {
+  if (!data || !url) return []
+  const refs = []
+  if (data.profile?.imageUrl === url) refs.push('Hero / Profile photo')
+  if (data.education?.imageUrl === url) refs.push('Education card')
+  for (const p of data.projects || []) {
+    if (p.imageUrl === url) refs.push(`Project: ${p.title || '(untitled)'}`)
+  }
+  for (const e of data.experience || []) {
+    if (e.imageUrl === url) {
+      refs.push(`Experience: ${e.role || ''} @ ${e.company || ''}`.trim())
+    }
+  }
+  return refs
+}
 
 export default function ImageManager({ password }) {
+  const { data: resumeData } = useResumeData()
   const [images, setImages] = useState(null)
   const [error, setError] = useState(null)
   const [uploading, setUploading] = useState(false)
@@ -52,7 +74,18 @@ export default function ImageManager({ password }) {
   }
 
   const handleDelete = async (filename) => {
-    if (!confirm(`Delete "${filename}"? This cannot be undone.`)) return
+    const img = images?.find((i) => i.name === filename)
+    const refs = img ? findReferences(resumeData, img.url) : []
+
+    let message = `Delete "${filename}"? This cannot be undone.`
+    if (refs.length) {
+      message +=
+        '\n\nThis image is currently used by:\n' +
+        refs.map((r) => `  • ${r}`).join('\n') +
+        '\n\nThose sections will show a broken image until you pick a different one. Continue?'
+    }
+    if (!confirm(message)) return
+
     try {
       await api.deleteImage(filename, password)
       await load()
