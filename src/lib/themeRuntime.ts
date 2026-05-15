@@ -77,6 +77,11 @@ export function applyTheme(theme: Theme | null): () => void {
   const scale = SPACING_SCALE[spacing] ?? 1
   body.style.setProperty('--theme-section-scale', String(scale))
 
+  // Marker class — used by CSS to clear the default body gradient when a
+  // theme provides a flat background. Cleaner than sniffing the inline
+  // style attribute for the substring "--theme-bg".
+  body.classList.add('themed')
+
   // Google Fonts (if any)
   if (theme.headingFontUrl) {
     ensureFontLink(theme.headingFontUrl, 'heading')
@@ -101,14 +106,22 @@ function clearThemeVars(): void {
   body.style.removeProperty('--theme-heading-font')
   body.style.removeProperty('--theme-body-font')
   body.style.removeProperty('--theme-section-scale')
+  body.classList.remove('themed')
   removeFontLink('heading')
   removeFontLink('body')
 }
 
-/** Wrap a font name in quotes if it contains spaces. */
+/**
+ * Wrap a font name in double quotes unless it's already quoted or is a single
+ * bare identifier (letters / digits / hyphen). Per CSS spec, anything else —
+ * spaces, apostrophes, slashes, dots — needs quotes to be a valid
+ * font-family value. Internal double-quote characters get escaped.
+ */
 function quoteFontName(name: string): string {
   const trimmed = name.trim()
   if (!trimmed) return ''
   if (/^['"].*['"]$/.test(trimmed)) return trimmed
-  return /\s/.test(trimmed) ? `"${trimmed}"` : trimmed
+  // Bare CSS identifier: letters, digits, hyphens, no leading digit.
+  if (/^[A-Za-z][A-Za-z0-9-]*$/.test(trimmed)) return trimmed
+  return `"${trimmed.replace(/"/g, '\\"')}"`
 }

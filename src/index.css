@@ -18,9 +18,10 @@
       radial-gradient(50rem 30rem at -10% 30%, rgba(30, 58, 95, 0.03), transparent 60%);
     background-attachment: fixed;
   }
-  /* When a theme provides its own background, drop the navy gradient so the
-     theme color reads cleanly. */
-  body[style*="--theme-bg"] {
+  /* When a theme is active (body has the .themed class set by themeRuntime),
+     drop the navy gradient so the theme background reads as a clean flat
+     color. Stable contract — no attribute-string sniffing. */
+  body.themed {
     background-image: none;
   }
 
@@ -79,8 +80,11 @@
     border-style: solid;
     border-color: var(--theme-card-border, #e7e5e4);
   }
+  /* Hover darkens whatever the current border color is by mixing 25% ink in.
+     Works for any theme without needing a second --theme-card-border-hover
+     variable to be configured. color-mix is supported in all modern browsers. */
   .card:hover {
-    border-color: var(--theme-card-border-hover, var(--theme-card-border, #d6d3d1));
+    border-color: color-mix(in srgb, var(--theme-card-border, #e7e5e4) 75%, #1c1917);
   }
 
   .btn {

@@ -17,16 +17,8 @@
     "seed": "node prisma/seed.js"
   },
   "dependencies": {
-    "@fontsource/ibm-plex-sans": "^5.2.8",
-    "@fontsource/ibm-plex-serif": "^5.2.7",
-    "@fontsource/inter": "^5.2.8",
-    "@fontsource/lora": "^5.2.8",
-    "@fontsource/merriweather": "^5.2.11",
-    "@fontsource/nunito": "^5.2.7",
-    "@fontsource/playfair-display": "^5.2.8",
     "@fontsource/source-sans-3": "^5.2.9",
     "@fontsource/source-serif-4": "^5.2.9",
-    "@fontsource/work-sans": "^5.2.8",
     "@prisma/client": "^6.19.3",
     "@react-pdf/renderer": "^4.5.1",
     "@supabase/supabase-js": "^2.105.4",

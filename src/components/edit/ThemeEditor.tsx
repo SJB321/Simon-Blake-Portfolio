@@ -144,6 +144,30 @@ export default function ThemeEditor({
       setError('Custom body font name cannot be empty.')
       return
     }
+    // Quick sanity check on custom Google Fonts URLs. We don't enforce the
+    // exact /css2?family=... shape since the user might paste @import or
+    // any other valid Google Fonts URL — but we do require it parse as an
+    // https URL to catch obvious typos.
+    if (
+      draft.headingMode === 'custom' &&
+      draft.headingFontUrl &&
+      !isValidFontUrl(draft.headingFontUrl)
+    ) {
+      setError(
+        'Heading font URL doesn\'t look right. Paste the Google Fonts URL from the "Get embed code" panel.',
+      )
+      return
+    }
+    if (
+      draft.bodyMode === 'custom' &&
+      draft.bodyFontUrl &&
+      !isValidFontUrl(draft.bodyFontUrl)
+    ) {
+      setError(
+        'Body font URL doesn\'t look right. Paste the Google Fonts URL from the "Get embed code" panel.',
+      )
+      return
+    }
 
     const payload = buildPayload(draft)
 
@@ -295,6 +319,8 @@ export default function ThemeEditor({
 
           <ThemePreview draft={draft} />
 
+          <ContrastWarning draft={draft} />
+
           {error && (
             <p className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
               {error}
@@ -366,6 +392,17 @@ function normalizeHex(v: string): string {
   const s = v.trim()
   if (!s) return '#000000'
   return s.startsWith('#') ? s : `#${s}`
+}
+
+/** True if the string parses as an http(s) URL — used to gate custom Google
+ *  Fonts URL inputs against typos. */
+function isValidFontUrl(s: string): boolean {
+  try {
+    const u = new URL(s.trim())
+    return u.protocol === 'https:' || u.protocol === 'http:'
+  } catch {
+    return false
+  }
 }
 
 /* ───────────────────────────── sub-components ───────────────────────────── */
@@ -527,6 +564,38 @@ function FontPickerField({
       </div>
     </Field>
   )
+}
+
+/** Surface a warning when the chosen page or card background is too dark
+ *  for the body text colors the site uses (hardcoded `text-stone-*`). We
+ *  don't theme text colors site-wide, so dark backgrounds produce poor
+ *  contrast that we want the user to know about up front. */
+function ContrastWarning({ draft }: { draft: DraftState }) {
+  // text-stone-900 is #1c1917 — close to black. If the bg's relative
+  // luminance is below ~0.45, contrast against this text starts failing
+  // typical readability thresholds.
+  const bgLum = relativeLuminance(draft.backgroundColor)
+  const cardLum = relativeLuminance(draft.cardBackgroundColor)
+  const tooDark = bgLum < 0.45 || cardLum < 0.45
+  if (!tooDark) return null
+  return (
+    <p className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+      Heads up: the page or box color is dark and the site uses hardcoded
+      near-black body text. Recruiters may see low-contrast text on the public
+      site. Pick lighter background colors, or use this theme knowingly.
+    </p>
+  )
+}
+
+/** Quick relative luminance approximation per WCAG. Returns 0 (black) to 1
+ *  (white). Skips the full sRGB gamma math — good enough for a heuristic. */
+function relativeLuminance(hex: string): number {
+  const h = hex.replace('#', '')
+  if (h.length !== 6) return 1
+  const r = parseInt(h.slice(0, 2), 16) / 255
+  const g = parseInt(h.slice(2, 4), 16) / 255
+  const b = parseInt(h.slice(4, 6), 16) / 255
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
 /** A small live preview of the theme using inline styles so it reflects

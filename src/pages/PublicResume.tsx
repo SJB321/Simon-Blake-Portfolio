@@ -20,10 +20,21 @@ export default function PublicResume() {
 
   // Apply the active theme whenever it changes; reset on unmount so the
   // edit page (or any future routes) start from a clean baseline.
+  //
+  // Key dependency on `id` + `updatedAt` rather than the theme object
+  // reference — a refetch after saving unrelated resume content returns a
+  // *new* activeTheme object that's logically identical, and re-running
+  // applyTheme would briefly tear down and re-add the Google Font <link>
+  // tags, causing a visible font flicker. With this dep set, applyTheme
+  // only re-runs on a real theme change.
+  const activeTheme = data?.activeTheme ?? null
+  const themeId = activeTheme?.id ?? null
+  const themeUpdatedAt = activeTheme?.updatedAt ?? null
   useEffect(() => {
-    const undo = applyTheme(data?.activeTheme ?? null)
+    const undo = applyTheme(activeTheme)
     return undo
-  }, [data?.activeTheme])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [themeId, themeUpdatedAt])
 
   if (loading) return <LoadingScreen />
   if (error) return <ErrorScreen error={error} />
