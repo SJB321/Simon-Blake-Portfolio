@@ -198,6 +198,38 @@ export const api = {
       headers: { 'X-Admin-Password': password ?? '' },
       body: JSON.stringify({ id }),
     }),
+
+  // ── AI assist ─────────────────────────────────────────────
+  /**
+   * Ask OpenAI to rewrite a single field. `fieldLabel` is a human-readable
+   * descriptor (e.g. "Project description") that gets passed to the model so
+   * it knows the field's role. `resume` is the full current payload — sent
+   * so the model can see the candidate's full context and stay consistent.
+   */
+  aiRevise: (
+    body: { fieldLabel: string; fieldValue: string; resume: ResumePayload | null },
+    password: string | undefined,
+  ): Promise<{ suggestion: string }> =>
+    request('/api/ai/revise', {
+      method: 'POST',
+      headers: { 'X-Admin-Password': password ?? '' },
+      body: JSON.stringify(body),
+    }),
+
+  /**
+   * Ask OpenAI for a bulleted list of section-level improvement ideas. Same
+   * shape as revise — full resume goes along as context, plus the section
+   * label and contents.
+   */
+  aiAdvise: (
+    body: { sectionLabel: string; sectionContent: string; resume: ResumePayload | null },
+    password: string | undefined,
+  ): Promise<{ advice: string[] }> =>
+    request('/api/ai/advise', {
+      method: 'POST',
+      headers: { 'X-Admin-Password': password ?? '' },
+      body: JSON.stringify(body),
+    }),
 }
 
 /** Read a File into a base64 string (no `data:` prefix). */

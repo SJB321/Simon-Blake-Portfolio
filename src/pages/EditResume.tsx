@@ -9,7 +9,9 @@
 // — never in localStorage. Refreshing /edit directly will redirect back to /.
 
 import {
+  useCallback,
   useEffect,
+  useRef,
   useState,
   type FormEvent,
   type InputHTMLAttributes,
@@ -22,6 +24,8 @@ import { useResumeData } from '../context/ResumeData'
 import { api } from '../lib/api'
 import ImageManager, { ImagePicker } from '../components/edit/ImageManager'
 import ThemeManager from '../components/edit/ThemeManager'
+import AiAssistedField from '../components/edit/AiAssistedField'
+import AiSectionAdvise from '../components/edit/AiSectionAdvise'
 import type {
   Profile,
   About as AboutModel,
@@ -31,6 +35,9 @@ import type {
   Experience,
   ResumePayload,
 } from '../types/resume'
+
+/** Stable thunk type for AI components — returns the live full draft. */
+type GetResume = () => ResumePayload | null
 
 // Local-state shape of the route — the `password` is stashed there after the
 // public page's password modal validates it.
@@ -58,6 +65,15 @@ export default function EditResume() {
   useEffect(() => {
     if (data && !draft) setDraft(deepClone(data))
   }, [data, draft])
+
+  // Stable thunk that the AI helpers call at click time to read the latest
+  // draft. Without the ref, every keystroke would re-create the function and
+  // memoized children would tear down + remount.
+  const draftRef = useRef<ResumePayload | null>(null)
+  useEffect(() => {
+    draftRef.current = draft
+  }, [draft])
+  const getResume: GetResume = useCallback(() => draftRef.current, [])
 
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -128,14 +144,29 @@ export default function EditResume() {
               profile={draft.profile}
               onChange={(v) => update('profile', v)}
               password={password}
+              getResume={getResume}
             />
           )}
+          <AiSectionAdvise
+            sectionLabel="Hero / Profile"
+            getSectionContent={() => summarizeProfileForAi(draftRef.current?.profile ?? null)}
+            getResume={getResume}
+            password={password}
+          />
         </Section>
 
         <Section title="About" description="Narrative paragraphs and your areas of interest.">
           <AboutForm
             about={draft.about}
             onChange={(v) => update('about', v)}
+            password={password}
+            getResume={getResume}
+          />
+          <AiSectionAdvise
+            sectionLabel="About"
+            getSectionContent={() => summarizeAboutForAi(draftRef.current?.about ?? null)}
+            getResume={getResume}
+            password={password}
           />
         </Section>
 
@@ -144,12 +175,25 @@ export default function EditResume() {
             groups={draft.skillGroups}
             onChange={(v) => update('skillGroups', v)}
           />
+          <AiSectionAdvise
+            sectionLabel="Skills"
+            getSectionContent={() => summarizeSkillsForAi(draftRef.current?.skillGroups ?? [])}
+            getResume={getResume}
+            password={password}
+          />
         </Section>
 
         <Section title="Projects" description="Real work to feature. Top of the list shows first.">
           <ProjectsForm
             projects={draft.projects}
             onChange={(v) => update('projects', v)}
+            password={password}
+            getResume={getResume}
+          />
+          <AiSectionAdvise
+            sectionLabel="Projects"
+            getSectionContent={() => summarizeProjectsForAi(draftRef.current?.projects ?? [])}
+            getResume={getResume}
             password={password}
           />
         </Section>
@@ -159,6 +203,13 @@ export default function EditResume() {
             entries={draft.experience}
             onChange={(v) => update('experience', v)}
             password={password}
+            getResume={getResume}
+          />
+          <AiSectionAdvise
+            sectionLabel="Experience"
+            getSectionContent={() => summarizeExperienceForAi(draftRef.current?.experience ?? [])}
+            getResume={getResume}
+            password={password}
           />
         </Section>
 
@@ -166,6 +217,12 @@ export default function EditResume() {
           <EducationForm
             education={draft.education}
             onChange={(v) => update('education', v)}
+            password={password}
+          />
+          <AiSectionAdvise
+            sectionLabel="Education"
+            getSectionContent={() => summarizeEducationForAi(draftRef.current?.education ?? null)}
+            getResume={getResume}
             password={password}
           />
         </Section>
@@ -341,6 +398,14 @@ interface StringListProps {
   onChange: (next: string[]) => void
   placeholder?: string
   allowEmpty?: boolean
+  /** Enable per-item AI rewrite. Each bullet gets its own Sparkles button +
+   *  inline suggestion box. Only meaningful for prose-like bullets (project
+   *  impact, experience points) — skip for skill chips / coursework. */
+  aiAssist?: {
+    label: string
+    password: string | undefined
+    getResume: GetResume
+  }
 }
 
 /** Editable list of strings with add/remove controls. */
@@ -349,31 +414,76 @@ function StringList({
   onChange,
   placeholder = '',
   allowEmpty = true,
+  aiAssist,
 }: StringListProps) {
   const items = Array.isArray(values) ? values : []
   return (
     <div className="space-y-2">
-      {items.map((value, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <Input
-            value={value}
-            placeholder={placeholder}
-            onChange={(e) => {
-              const next = [...items]
-              next[i] = e.target.value
-              onChange(next)
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => onChange(items.filter((_, j) => j !== i))}
-            className="rounded-md p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-            title="Remove"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      ))}
+      {items.map((value, i) => {
+        const inputRow = (
+          <div className="flex items-center gap-2">
+            <Input
+              value={value}
+              placeholder={placeholder}
+              onChange={(e) => {
+                const next = [...items]
+                next[i] = e.target.value
+                onChange(next)
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => onChange(items.filter((_, j) => j !== i))}
+              className="rounded-md p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+              title="Remove"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        )
+
+        if (!aiAssist) return <div key={i}>{inputRow}</div>
+
+        // AI-assisted variant: AiAssistedField wraps just the input so the
+        // Sparkles button sits at the input's right edge (not overlapping the
+        // delete column) and the suggestion box appears directly under the
+        // input it came from.
+        return (
+          <div key={i} className="flex items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <AiAssistedField
+                label={aiAssist.label}
+                value={value}
+                onApply={(text) => {
+                  const next = [...items]
+                  next[i] = text
+                  onChange(next)
+                }}
+                password={aiAssist.password}
+                getResume={aiAssist.getResume}
+              >
+                <Input
+                  value={value}
+                  placeholder={placeholder}
+                  onChange={(e) => {
+                    const next = [...items]
+                    next[i] = e.target.value
+                    onChange(next)
+                  }}
+                />
+              </AiAssistedField>
+            </div>
+            <button
+              type="button"
+              onClick={() => onChange(items.filter((_, j) => j !== i))}
+              className="mt-1 rounded-md p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+              title="Remove"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        )
+      })}
       <button
         type="button"
         onClick={() => onChange([...items, allowEmpty ? '' : placeholder])}
@@ -442,9 +552,10 @@ interface ProfileFormProps {
   profile: Profile
   onChange: (next: Profile) => void
   password: string | undefined
+  getResume: GetResume
 }
 
-function ProfileForm({ profile, onChange, password }: ProfileFormProps) {
+function ProfileForm({ profile, onChange, password, getResume }: ProfileFormProps) {
   const set = <K extends keyof Profile>(key: K, val: Profile[K]) =>
     onChange({ ...profile, [key]: val })
   return (
@@ -465,10 +576,27 @@ function ProfileForm({ profile, onChange, password }: ProfileFormProps) {
         <Field label="GitHub URL"><Input value={profile.github ?? ''} onChange={(e) => set('github', e.target.value)} placeholder="https://github.com/..." /></Field>
         <Field label="LinkedIn URL"><Input value={profile.linkedin ?? ''} onChange={(e) => set('linkedin', e.target.value)} placeholder="https://www.linkedin.com/in/..." /></Field>
         <Field label="Tagline" span={2}>
-          <Input value={profile.tagline ?? ''} onChange={(e) => set('tagline', e.target.value)} placeholder="I build games for the love of the game." />
+          <AiAssistedField
+            label="Hero tagline"
+            value={profile.tagline ?? ''}
+            onApply={(text) => set('tagline', text)}
+            password={password}
+            getResume={getResume}
+          >
+            <Input value={profile.tagline ?? ''} onChange={(e) => set('tagline', e.target.value)} placeholder="I build games for the love of the game." />
+          </AiAssistedField>
         </Field>
         <Field label="Intro paragraph (hero)" span={2} hint="Appears under the tagline on the public site.">
-          <Textarea rows={3} value={profile.intro ?? ''} onChange={(e) => set('intro', e.target.value)} />
+          <AiAssistedField
+            label="Hero intro paragraph"
+            value={profile.intro ?? ''}
+            onApply={(text) => set('intro', text)}
+            password={password}
+            getResume={getResume}
+            multiline
+          >
+            <Textarea rows={3} value={profile.intro ?? ''} onChange={(e) => set('intro', e.target.value)} />
+          </AiAssistedField>
         </Field>
       </div>
     </div>
@@ -478,9 +606,11 @@ function ProfileForm({ profile, onChange, password }: ProfileFormProps) {
 interface AboutFormProps {
   about: AboutModel | null
   onChange: (next: AboutModel) => void
+  password: string | undefined
+  getResume: GetResume
 }
 
-function AboutForm({ about, onChange }: AboutFormProps) {
+function AboutForm({ about, onChange, password, getResume }: AboutFormProps) {
   const safeAbout: AboutModel = about ?? {
     id: 1,
     paragraphs: [],
@@ -495,15 +625,30 @@ function AboutForm({ about, onChange }: AboutFormProps) {
         <div className="space-y-2">
           {(safeAbout.paragraphs || []).map((p, i) => (
             <div key={i} className="flex items-start gap-2">
-              <Textarea
-                rows={3}
-                value={p}
-                onChange={(e) => {
-                  const next = [...safeAbout.paragraphs]
-                  next[i] = e.target.value
-                  set('paragraphs', next)
-                }}
-              />
+              <div className="min-w-0 flex-1">
+                <AiAssistedField
+                  label="About paragraph"
+                  value={p}
+                  onApply={(text) => {
+                    const next = [...safeAbout.paragraphs]
+                    next[i] = text
+                    set('paragraphs', next)
+                  }}
+                  password={password}
+                  getResume={getResume}
+                  multiline
+                >
+                  <Textarea
+                    rows={3}
+                    value={p}
+                    onChange={(e) => {
+                      const next = [...safeAbout.paragraphs]
+                      next[i] = e.target.value
+                      set('paragraphs', next)
+                    }}
+                  />
+                </AiAssistedField>
+              </div>
               <button
                 type="button"
                 onClick={() =>
@@ -570,9 +715,10 @@ interface ProjectsFormProps {
   projects: Project[]
   onChange: (next: Project[]) => void
   password: string | undefined
+  getResume: GetResume
 }
 
-function ProjectsForm({ projects, onChange, password }: ProjectsFormProps) {
+function ProjectsForm({ projects, onChange, password, getResume }: ProjectsFormProps) {
   const now = new Date().toISOString()
   return (
     <ItemList<Project>
@@ -607,7 +753,16 @@ function ProjectsForm({ projects, onChange, password }: ProjectsFormProps) {
             </Field>
           </div>
           <Field label="Description">
-            <Textarea rows={3} value={project.description ?? ''} onChange={(e) => patch({ description: e.target.value })} />
+            <AiAssistedField
+              label={`Project description (${project.title || 'untitled'})`}
+              value={project.description ?? ''}
+              onApply={(text) => patch({ description: text })}
+              password={password}
+              getResume={getResume}
+              multiline
+            >
+              <Textarea rows={3} value={project.description ?? ''} onChange={(e) => patch({ description: e.target.value })} />
+            </AiAssistedField>
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="GitHub URL">
@@ -621,7 +776,16 @@ function ProjectsForm({ projects, onChange, password }: ProjectsFormProps) {
             <StringList values={project.tech} onChange={(v) => patch({ tech: v })} placeholder="C#" />
           </Field>
           <Field label="Impact / bullets">
-            <StringList values={project.impact} onChange={(v) => patch({ impact: v })} placeholder="What you owned and what it produced." />
+            <StringList
+              values={project.impact}
+              onChange={(v) => patch({ impact: v })}
+              placeholder="What you owned and what it produced."
+              aiAssist={{
+                label: `Project impact bullet (${project.title || 'untitled'})`,
+                password,
+                getResume,
+              }}
+            />
           </Field>
           <ImagePicker
             label="Cover image (optional)"
@@ -639,9 +803,10 @@ interface ExperienceFormProps {
   entries: Experience[]
   onChange: (next: Experience[]) => void
   password: string | undefined
+  getResume: GetResume
 }
 
-function ExperienceForm({ entries, onChange, password }: ExperienceFormProps) {
+function ExperienceForm({ entries, onChange, password, getResume }: ExperienceFormProps) {
   const now = new Date().toISOString()
   return (
     <ItemList<Experience>
@@ -676,7 +841,16 @@ function ExperienceForm({ entries, onChange, password }: ExperienceFormProps) {
             </Field>
           </div>
           <Field label="Bullets">
-            <StringList values={entry.points} onChange={(v) => patch({ points: v })} placeholder="What you did and what it taught you." />
+            <StringList
+              values={entry.points}
+              onChange={(v) => patch({ points: v })}
+              placeholder="What you did and what it taught you."
+              aiAssist={{
+                label: `Experience bullet (${entry.role || 'role'} @ ${entry.company || 'company'})`,
+                password,
+                getResume,
+              }}
+            />
           </Field>
           <ImagePicker
             label="Logo / image (optional)"
@@ -811,4 +985,83 @@ function PasswordForm({ currentPassword, onPasswordChanged }: PasswordFormProps)
 
 function deepClone<T>(v: T): T {
   return JSON.parse(JSON.stringify(v)) as T
+}
+
+/* -----------------------------------------------------------
+   Section flatteners — produce plain-text snapshots of the live
+   draft that get shipped to /api/ai/advise as the "section
+   contents" the model is critiquing.
+   ----------------------------------------------------------- */
+
+function summarizeProfileForAi(p: Profile | null): string {
+  if (!p) return '(empty)'
+  return [
+    `Name: ${p.name || ''}`,
+    `Role: ${p.role || ''}`,
+    `Location: ${p.location || ''}`,
+    `Availability: ${p.availability || ''}`,
+    `Tagline: ${p.tagline || ''}`,
+    `Intro: ${p.intro || ''}`,
+  ]
+    .filter((l) => !l.endsWith(': '))
+    .join('\n')
+}
+
+function summarizeAboutForAi(a: AboutModel | null): string {
+  if (!a) return '(empty)'
+  const paragraphs = (a.paragraphs || []).map((x, i) => `${i + 1}. ${x}`).join('\n')
+  const interests = (a.interests || []).join(', ')
+  return [paragraphs && `Paragraphs:\n${paragraphs}`, interests && `Interests: ${interests}`]
+    .filter(Boolean)
+    .join('\n\n')
+}
+
+function summarizeSkillsForAi(groups: SkillGroup[]): string {
+  if (!groups.length) return '(empty)'
+  return groups
+    .map((g) => `${g.title || '(untitled group)'}: ${(g.items || []).join(', ')}`)
+    .join('\n')
+}
+
+function summarizeProjectsForAi(projects: Project[]): string {
+  if (!projects.length) return '(empty)'
+  return projects
+    .map((p) => {
+      const head = [p.title, p.role, p.year].filter(Boolean).join(' · ')
+      const impact = (p.impact || []).map((b) => `   - ${b}`).join('\n')
+      const tech = (p.tech || []).join(', ')
+      return [
+        `- ${head}`,
+        p.description ? `  ${p.description}` : '',
+        impact ? `  Impact:\n${impact}` : '',
+        tech ? `  Tech: ${tech}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n')
+    })
+    .join('\n\n')
+}
+
+function summarizeExperienceForAi(entries: Experience[]): string {
+  if (!entries.length) return '(empty)'
+  return entries
+    .map((e) => {
+      const head = [e.role, e.company, e.location, e.period].filter(Boolean).join(' · ')
+      const points = (e.points || []).map((b) => `   - ${b}`).join('\n')
+      return points ? `- ${head}\n${points}` : `- ${head}`
+    })
+    .join('\n\n')
+}
+
+function summarizeEducationForAi(e: EducationModel | null): string {
+  if (!e) return '(empty)'
+  return [
+    `${e.degree || ''} — ${e.school || ''}${e.college ? `, ${e.college}` : ''}`.trim(),
+    e.period ? `Period: ${e.period}` : '',
+    e.gpa ? `GPA: ${e.gpa}` : '',
+    e.honors?.length ? `Honors: ${e.honors.join('; ')}` : '',
+    e.coursework?.length ? `Coursework: ${e.coursework.join(', ')}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
