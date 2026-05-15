@@ -89,6 +89,9 @@ export interface Theme {
   backgroundColor: string
   cardBackgroundColor: string
   cardBorderColor: string
+  textColor: string
+  bodyTextColor: string
+  mutedTextColor: string
   spacing: 'compact' | 'comfortable' | 'spacious' | string
   createdAt: string
   updatedAt: string

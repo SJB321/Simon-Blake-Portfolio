@@ -166,12 +166,19 @@ function ThemeCard({
             </p>
           )}
         </div>
-        {/* Color swatches — accent / page bg / card bg / card border */}
-        <div className="flex shrink-0 gap-0.5" aria-hidden>
-          <ColorSwatch color={theme.accentColor} title={`Accent ${theme.accentColor}`} />
-          <ColorSwatch color={theme.backgroundColor} title={`Background ${theme.backgroundColor}`} />
-          <ColorSwatch color={theme.cardBackgroundColor} title={`Box ${theme.cardBackgroundColor}`} />
-          <ColorSwatch color={theme.cardBorderColor} title={`Border ${theme.cardBorderColor}`} />
+        {/* Color swatches — surface colors on top row, text colors below */}
+        <div className="flex flex-col shrink-0 gap-1" aria-hidden>
+          <div className="flex gap-0.5">
+            <ColorSwatch color={theme.accentColor} title={`Accent ${theme.accentColor}`} />
+            <ColorSwatch color={theme.backgroundColor} title={`Page ${theme.backgroundColor}`} />
+            <ColorSwatch color={theme.cardBackgroundColor} title={`Box ${theme.cardBackgroundColor}`} />
+            <ColorSwatch color={theme.cardBorderColor} title={`Border ${theme.cardBorderColor}`} />
+          </div>
+          <div className="flex gap-0.5">
+            <ColorSwatch color={theme.textColor} title={`Heading text ${theme.textColor}`} />
+            <ColorSwatch color={theme.bodyTextColor} title={`Body text ${theme.bodyTextColor}`} />
+            <ColorSwatch color={theme.mutedTextColor} title={`Muted text ${theme.mutedTextColor}`} />
+          </div>
         </div>
       </div>
 

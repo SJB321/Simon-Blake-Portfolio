@@ -14,6 +14,9 @@ export interface ThemeInput {
   backgroundColor: string
   cardBackgroundColor: string
   cardBorderColor: string
+  textColor: string
+  bodyTextColor: string
+  mutedTextColor: string
   spacing: string
 }
 

@@ -212,11 +212,13 @@ async function main() {
         backgroundColor: '#fafaf9',
         cardBackgroundColor: '#ffffff',
         cardBorderColor: '#e7e5e4',
+        textColor: '#1c1917',
+        bodyTextColor: '#57534e',
+        mutedTextColor: '#78716c',
         spacing: 'comfortable',
       },
       {
-        // 2. Warm, magazine-style — fully serif, cream paper, sienna accent,
-        //    spacious section gaps to feel airy.
+        // 2. Warm editorial — warm browns/sepia on cream.
         name: 'Warm Editorial',
         description:
           'Magazine-style serif on cream paper. Sienna accent, spacious rhythm. Both heading and body in serif.',
@@ -230,11 +232,13 @@ async function main() {
         backgroundColor: '#faf6f0',
         cardBackgroundColor: '#fffaf2',
         cardBorderColor: '#e8dccb',
+        textColor: '#2e1e15',
+        bodyTextColor: '#5a4838',
+        mutedTextColor: '#8a755e',
         spacing: 'spacious',
       },
       {
-        // 3. Modern technical — slate accent, cool gray surfaces, both Plex
-        //    fonts, tighter spacing for an information-dense feel.
+        // 3. Studio minimal — cool slate text on cool slate surfaces.
         name: 'Studio Minimal',
         description:
           'Cool grays, slate accent, IBM Plex pair. Compact spacing for an information-dense, technical feel.',
@@ -248,12 +252,13 @@ async function main() {
         backgroundColor: '#f1f5f9',
         cardBackgroundColor: '#ffffff',
         cardBorderColor: '#cbd5e1',
+        textColor: '#0f172a',
+        bodyTextColor: '#475569',
+        mutedTextColor: '#94a3b8',
         spacing: 'compact',
       },
       {
-        // 4. Bold geometric — all sans, single-font typography (Work Sans
-        //    everywhere with weight contrast). High-contrast pink accent on
-        //    white. Stronger borders for graphic definition.
+        // 4. Bold geometric — high contrast, near-black text everywhere.
         name: 'Bold Geometric',
         description:
           'High-contrast, sans-only typography with a bold pink accent. Strong card borders for graphic definition.',
@@ -267,6 +272,9 @@ async function main() {
         backgroundColor: '#ffffff',
         cardBackgroundColor: '#fafaf9',
         cardBorderColor: '#1c1917',
+        textColor: '#000000',
+        bodyTextColor: '#1c1917',
+        mutedTextColor: '#4b4441',
         spacing: 'comfortable',
       },
     ]

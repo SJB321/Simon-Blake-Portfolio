@@ -20,6 +20,9 @@ interface ThemeBody {
   backgroundColor?: string
   cardBackgroundColor?: string
   cardBorderColor?: string
+  textColor?: string
+  bodyTextColor?: string
+  mutedTextColor?: string
   spacing?: string
 }
 
@@ -71,6 +74,9 @@ async function createTheme(req: VercelRequest, res: VercelResponse) {
       backgroundColor: body.backgroundColor || '#fafaf9',
       cardBackgroundColor: body.cardBackgroundColor || '#ffffff',
       cardBorderColor: body.cardBorderColor || '#e7e5e4',
+      textColor: body.textColor || '#1c1917',
+      bodyTextColor: body.bodyTextColor || '#57534e',
+      mutedTextColor: body.mutedTextColor || '#78716c',
       spacing: normalizeSpacing(body.spacing),
     },
   })
@@ -92,6 +98,9 @@ export function validate(
     ['backgroundColor', body.backgroundColor],
     ['cardBackgroundColor', body.cardBackgroundColor],
     ['cardBorderColor', body.cardBorderColor],
+    ['textColor', body.textColor],
+    ['bodyTextColor', body.bodyTextColor],
+    ['mutedTextColor', body.mutedTextColor],
   ] as const
   for (const [name, value] of colorFields) {
     if (value !== undefined && value !== null && !hexRe.test(value)) {

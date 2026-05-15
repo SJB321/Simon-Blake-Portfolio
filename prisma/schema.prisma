@@ -154,6 +154,14 @@ model Theme {
   cardBackgroundColor String @default("#ffffff")
   cardBorderColor     String @default("#e7e5e4")
 
+  // Text colors — three levels of hierarchy used across the public site.
+  // textColor      → headings, names, strong text (stone-900 / 800)
+  // bodyTextColor  → paragraphs, descriptions (stone-700 / 600)
+  // mutedTextColor → labels, dates, metadata, faint icons (stone-500 / 400)
+  textColor       String   @default("#1c1917")
+  bodyTextColor   String   @default("#57534e")
+  mutedTextColor  String   @default("#78716c")
+
   // Spacing preset: 'compact' | 'comfortable' | 'spacious'.
   // Maps to a CSS variable that scales section padding on the public site.
   spacing         String   @default("comfortable")

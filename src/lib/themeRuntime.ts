@@ -68,6 +68,9 @@ export function applyTheme(theme: Theme | null): () => void {
   body.style.setProperty('--theme-bg', theme.backgroundColor)
   body.style.setProperty('--theme-card-bg', theme.cardBackgroundColor)
   body.style.setProperty('--theme-card-border', theme.cardBorderColor)
+  body.style.setProperty('--theme-text', theme.textColor)
+  body.style.setProperty('--theme-text-body', theme.bodyTextColor)
+  body.style.setProperty('--theme-text-muted', theme.mutedTextColor)
   body.style.setProperty(
     '--theme-heading-font',
     quoteFontName(theme.headingFont),
@@ -103,6 +106,9 @@ function clearThemeVars(): void {
   body.style.removeProperty('--theme-bg')
   body.style.removeProperty('--theme-card-bg')
   body.style.removeProperty('--theme-card-border')
+  body.style.removeProperty('--theme-text')
+  body.style.removeProperty('--theme-text-body')
+  body.style.removeProperty('--theme-text-muted')
   body.style.removeProperty('--theme-heading-font')
   body.style.removeProperty('--theme-body-font')
   body.style.removeProperty('--theme-section-scale')

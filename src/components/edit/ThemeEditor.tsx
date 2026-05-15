@@ -36,6 +36,9 @@ interface DraftState {
   backgroundColor: string
   cardBackgroundColor: string
   cardBorderColor: string
+  textColor: string
+  bodyTextColor: string
+  mutedTextColor: string
   spacing: SpacingOption
 }
 
@@ -61,6 +64,9 @@ function initialDraft(theme?: Theme): DraftState {
       backgroundColor: normalizeHex(theme.backgroundColor),
       cardBackgroundColor: normalizeHex(theme.cardBackgroundColor),
       cardBorderColor: normalizeHex(theme.cardBorderColor),
+      textColor: normalizeHex(theme.textColor),
+      bodyTextColor: normalizeHex(theme.bodyTextColor),
+      mutedTextColor: normalizeHex(theme.mutedTextColor),
       spacing,
     }
   }
@@ -77,6 +83,9 @@ function initialDraft(theme?: Theme): DraftState {
     backgroundColor: '#fafaf9',
     cardBackgroundColor: '#ffffff',
     cardBorderColor: '#e7e5e4',
+    textColor: '#1c1917',
+    bodyTextColor: '#57534e',
+    mutedTextColor: '#78716c',
     spacing: 'comfortable',
   }
 }
@@ -130,6 +139,9 @@ export default function ThemeEditor({
       ['Background color', draft.backgroundColor],
       ['Card background color', draft.cardBackgroundColor],
       ['Card border color', draft.cardBorderColor],
+      ['Heading text color', draft.textColor],
+      ['Body text color', draft.bodyTextColor],
+      ['Muted text color', draft.mutedTextColor],
     ]
     for (const [label, value] of colorChecks) {
       if (!hexRe.test(value)) {
@@ -272,32 +284,53 @@ export default function ThemeEditor({
             onFontUrlChange={(url) => set('bodyFontUrl', url)}
           />
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <ColorGroup title="Surface colors">
             <ColorField
-              label="Accent color"
-              hint="Buttons, links, eyebrows, PDF headings."
+              label="Accent"
+              hint="Buttons, links, eyebrows."
               value={draft.accentColor}
               onChange={(v) => set('accentColor', v)}
             />
             <ColorField
               label="Page background"
-              hint="The body color behind everything."
+              hint="Body color behind everything."
               value={draft.backgroundColor}
               onChange={(v) => set('backgroundColor', v)}
             />
             <ColorField
               label="Box background"
-              hint="Card surfaces — projects, education, contact, skills."
+              hint="Project / education / contact cards."
               value={draft.cardBackgroundColor}
               onChange={(v) => set('cardBackgroundColor', v)}
             />
             <ColorField
               label="Box border"
-              hint="Outline color around cards."
+              hint="Outline around cards."
               value={draft.cardBorderColor}
               onChange={(v) => set('cardBorderColor', v)}
             />
-          </div>
+          </ColorGroup>
+
+          <ColorGroup title="Text colors">
+            <ColorField
+              label="Heading text"
+              hint="Name, h1/h2, section titles, strong text."
+              value={draft.textColor}
+              onChange={(v) => set('textColor', v)}
+            />
+            <ColorField
+              label="Body text"
+              hint="Paragraphs, descriptions, project bullets."
+              value={draft.bodyTextColor}
+              onChange={(v) => set('bodyTextColor', v)}
+            />
+            <ColorField
+              label="Muted text"
+              hint="Labels, dates, metadata, faint icons."
+              value={draft.mutedTextColor}
+              onChange={(v) => set('mutedTextColor', v)}
+            />
+          </ColorGroup>
 
           <Field label="Spacing">
             <div className="flex gap-2">
@@ -385,6 +418,9 @@ function buildPayload(draft: DraftState): ThemeInput {
     backgroundColor: normalizeHex(draft.backgroundColor),
     cardBackgroundColor: normalizeHex(draft.cardBackgroundColor),
     cardBorderColor: normalizeHex(draft.cardBorderColor),
+    textColor: normalizeHex(draft.textColor),
+    bodyTextColor: normalizeHex(draft.bodyTextColor),
+    mutedTextColor: normalizeHex(draft.mutedTextColor),
     spacing: draft.spacing,
   }
 }
@@ -432,6 +468,23 @@ export function parseFontNameFromUrl(url: string): string | null {
 }
 
 /* ───────────────────────────── sub-components ───────────────────────────── */
+
+function ColorGroup({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <fieldset className="space-y-3">
+      <legend className="text-[11px] uppercase tracking-wider text-stone-500 font-medium">
+        {title}
+      </legend>
+      <div className="grid gap-4 sm:grid-cols-2">{children}</div>
+    </fieldset>
+  )
+}
 
 function ColorField({
   label,
@@ -666,23 +719,26 @@ function CustomFontInput({
   )
 }
 
-/** Surface a warning when the chosen page or card background is too dark
- *  for the body text colors the site uses (hardcoded `text-stone-*`). We
- *  don't theme text colors site-wide, so dark backgrounds produce poor
- *  contrast that we want the user to know about up front. */
+/** Surface a warning when text-on-background contrast is poor enough that
+ *  readability suffers. Now that text colors are themable, this catches the
+ *  user picking (say) dark gray text on a dark gray background. */
 function ContrastWarning({ draft }: { draft: DraftState }) {
-  // text-stone-900 is #1c1917 — close to black. If the bg's relative
-  // luminance is below ~0.45, contrast against this text starts failing
-  // typical readability thresholds.
-  const bgLum = relativeLuminance(draft.backgroundColor)
+  // We check the most-visible pairing: body text against card background
+  // (where most content lives), plus heading text against card background.
   const cardLum = relativeLuminance(draft.cardBackgroundColor)
-  const tooDark = bgLum < 0.45 || cardLum < 0.45
-  if (!tooDark) return null
+  const bodyTextLum = relativeLuminance(draft.bodyTextColor)
+  const headingTextLum = relativeLuminance(draft.textColor)
+  // WCAG-ish: differences below ~0.3 in luminance start failing AA on small
+  // text. This is a heuristic, not a proper contrast-ratio calc, but cheap.
+  const bodyDelta = Math.abs(cardLum - bodyTextLum)
+  const headingDelta = Math.abs(cardLum - headingTextLum)
+  const lowContrast = bodyDelta < 0.3 || headingDelta < 0.3
+  if (!lowContrast) return null
   return (
     <p className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
-      Heads up: the page or box color is dark and the site uses hardcoded
-      near-black body text. Recruiters may see low-contrast text on the public
-      site. Pick lighter background colors, or use this theme knowingly.
+      Heads up: text contrast against the box background looks low. Recruiters
+      may have trouble reading the site. Pick a stronger contrast between text
+      and box colors.
     </p>
   )
 }
@@ -747,16 +803,26 @@ function ThemePreview({ draft }: { draft: DraftState }) {
             Section eyebrow
           </p>
           <h3
-            className="mt-1 text-xl font-semibold tracking-tight text-stone-900"
+            className="mt-1 text-xl font-semibold tracking-tight"
             style={{
+              color: draft.textColor,
               fontFamily: `"${draft.headingFont}", Georgia, serif`,
             }}
           >
             A section heading
           </h3>
-          <p className="mt-2 text-sm text-stone-600">
-            The body text shows in this font. Cards use the box colors. Buttons and
-            links pick up the accent color.
+          <p
+            className="mt-2 text-sm"
+            style={{ color: draft.bodyTextColor }}
+          >
+            The body text shows in this font and color. Cards use the box colors,
+            buttons pick up the accent.
+          </p>
+          <p
+            className="mt-1 text-xs"
+            style={{ color: draft.mutedTextColor }}
+          >
+            Labels, dates, and metadata appear in muted text.
           </p>
           <span
             className="mt-3 inline-flex items-center rounded-md px-3 py-1 text-xs font-medium text-white"

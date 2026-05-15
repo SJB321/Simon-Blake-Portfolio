@@ -71,6 +71,12 @@ async function updateTheme(
           : undefined,
       cardBorderColor:
         typeof body.cardBorderColor === 'string' ? body.cardBorderColor : undefined,
+      textColor:
+        typeof body.textColor === 'string' ? body.textColor : undefined,
+      bodyTextColor:
+        typeof body.bodyTextColor === 'string' ? body.bodyTextColor : undefined,
+      mutedTextColor:
+        typeof body.mutedTextColor === 'string' ? body.mutedTextColor : undefined,
       spacing:
         body.spacing === undefined ? undefined : normalizeSpacing(body.spacing),
     },
