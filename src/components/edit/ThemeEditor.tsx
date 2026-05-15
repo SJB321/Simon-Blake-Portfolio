@@ -7,6 +7,7 @@ import {
   HEADING_PRESETS,
   BODY_PRESETS,
   SPACING_OPTIONS,
+  SPACING_SCALE,
   findPreset,
   type FontPreset,
   type SpacingOption,
@@ -405,6 +406,31 @@ function isValidFontUrl(s: string): boolean {
   }
 }
 
+/**
+ * Extract a font family name from a Google Fonts URL.
+ * Examples:
+ *   https://fonts.googleapis.com/css2?family=Bebas+Neue              → "Bebas Neue"
+ *   https://fonts.googleapis.com/css2?family=Fraunces:wght@400;700   → "Fraunces"
+ *   https://fonts.googleapis.com/css?family=Lora|Inter               → "Lora"
+ * Returns null if the URL has no `family` query parameter.
+ */
+export function parseFontNameFromUrl(url: string): string | null {
+  if (!url) return null
+  try {
+    const u = new URL(url.trim())
+    const family = u.searchParams.get('family')
+    if (!family) return null
+    // Strip any :weight / :ital,wght suffix, normalize '+' → space,
+    // and if the URL bundles multiple families (separated by '|'), pick the
+    // first one — it's the heading font in most preset pages.
+    const first = family.split('|')[0]
+    const name = first.split(':')[0].replace(/\+/g, ' ').trim()
+    return name || null
+  } catch {
+    return null
+  }
+}
+
 /* ───────────────────────────── sub-components ───────────────────────────── */
 
 function ColorField({
@@ -536,33 +562,107 @@ function FontPickerField({
             ))}
           </select>
         ) : (
-          <div className="space-y-2">
-            <Input
-              value={font}
-              onChange={(e) => onFontChange(e.target.value)}
-              placeholder="Bebas Neue"
-            />
-            <Input
-              value={fontUrl}
-              onChange={(e) => onFontUrlChange(e.target.value)}
-              placeholder="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap"
-            />
-            <p className="text-[11px] text-stone-500">
-              Paste the Google Fonts URL too — find it on{' '}
-              <a
-                href="https://fonts.google.com"
-                target="_blank"
-                rel="noreferrer"
-                className="underline hover:text-accent"
-              >
-                fonts.google.com
-              </a>{' '}
-              under "Get embed code → @import / link".
-            </p>
-          </div>
+          <CustomFontInput
+            font={font}
+            fontUrl={fontUrl}
+            onFontChange={onFontChange}
+            onFontUrlChange={onFontUrlChange}
+          />
         )}
       </div>
     </Field>
+  )
+}
+
+interface CustomFontInputProps {
+  font: string
+  fontUrl: string
+  onFontChange: (name: string) => void
+  onFontUrlChange: (url: string) => void
+}
+
+/**
+ * Single-input custom-font UI. The user pastes a Google Fonts URL; we parse
+ * the family name out of `?family=...` and write it back into the font name
+ * state automatically. Eliminates the previous mismatch bug where users could
+ * paste `?family=Lora` while typing "Bebas Neue" as the name, then save a
+ * theme that loaded one font but referenced another in CSS.
+ *
+ * We still expose the parsed name as read-only feedback so the user can
+ * verify what got detected before saving.
+ */
+function CustomFontInput({
+  font,
+  fontUrl,
+  onFontChange,
+  onFontUrlChange,
+}: CustomFontInputProps) {
+  // Whenever the URL changes, derive the family name and push it up.
+  // Effect (not render-time call) so we don't fight controlled-input
+  // re-render ordering.
+  useEffect(() => {
+    const parsed = parseFontNameFromUrl(fontUrl)
+    if (parsed && parsed !== font) {
+      onFontChange(parsed)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fontUrl])
+
+  const parsed = parseFontNameFromUrl(fontUrl)
+  const urlLooksValid = !fontUrl || isValidFontUrl(fontUrl)
+
+  return (
+    <div className="space-y-2">
+      <Input
+        value={fontUrl}
+        onChange={(e) => onFontUrlChange(e.target.value)}
+        placeholder="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap"
+      />
+      {/* Live status — what we detected, or a helpful nudge */}
+      {fontUrl ? (
+        parsed ? (
+          <p className="text-[11px] text-stone-500">
+            Detected family: <strong className="text-stone-800">{parsed}</strong>
+            {!urlLooksValid && (
+              <span className="ml-2 text-amber-700">
+                URL doesn't parse — check for typos.
+              </span>
+            )}
+          </p>
+        ) : (
+          <p className="text-[11px] text-amber-700">
+            Couldn't detect a font name. Make sure the URL has a{' '}
+            <code className="bg-amber-50 px-1 rounded">?family=Name</code> query
+            parameter.
+          </p>
+        )
+      ) : (
+        <p className="text-[11px] text-stone-500">
+          Find a URL on{' '}
+          <a
+            href="https://fonts.google.com"
+            target="_blank"
+            rel="noreferrer"
+            className="underline hover:text-accent"
+          >
+            fonts.google.com
+          </a>{' '}
+          → pick a family → "Get embed code → @import / link" → copy the URL
+          (just the URL, not the whole tag).
+        </p>
+      )}
+      {/* Editable font name — pre-filled from parse, can be tweaked */}
+      <div>
+        <span className="block text-[11px] text-stone-500 mb-1">
+          Font name used in CSS (auto-detected from URL):
+        </span>
+        <Input
+          value={font}
+          onChange={(e) => onFontChange(e.target.value)}
+          placeholder="Bebas Neue"
+        />
+      </div>
+    </div>
   )
 }
 
@@ -600,18 +700,37 @@ function relativeLuminance(hex: string): number {
 
 /** A small live preview of the theme using inline styles so it reflects
  *  changes immediately, without saving + activating the theme. Mirrors the
- *  public site's structure: a body-colored frame containing a card. */
+ *  public site's structure: a body-colored frame with a card inside.
+ *
+ *  Spacing setting is reflected by scaling the *frame* padding around the
+ *  card — that's the visible "rhythm" change a user would see on the real
+ *  site when sections breathe more or less. The scale matches what's
+ *  actually applied at runtime (SPACING_SCALE in fontPresets.ts). */
 function ThemePreview({ draft }: { draft: DraftState }) {
+  const scale = SPACING_SCALE[draft.spacing] ?? 1
+  // Base padding 24px scaled — produces visible difference between presets:
+  // compact 16px, comfortable 24px, spacious 32px (approx).
+  const framePadding = Math.round(24 * scale)
+
   return (
     <div className="rounded-lg border border-stone-200 overflow-hidden">
-      <p className="text-[10px] uppercase tracking-wider text-stone-500 font-medium bg-stone-50 px-4 py-2 border-b border-stone-200">
-        Preview
-      </p>
+      <div className="flex items-center justify-between bg-stone-50 px-4 py-2 border-b border-stone-200">
+        <p className="text-[10px] uppercase tracking-wider text-stone-500 font-medium">
+          Preview
+        </p>
+        <p className="text-[10px] text-stone-500 font-mono">
+          spacing × {scale}
+        </p>
+      </div>
       <div
-        className="p-6"
         style={{
           background: draft.backgroundColor,
+          paddingTop: framePadding,
+          paddingBottom: framePadding,
+          paddingLeft: 16,
+          paddingRight: 16,
           fontFamily: `"${draft.bodyFont}", system-ui, sans-serif`,
+          transition: 'padding 200ms ease',
         }}
       >
         <div
