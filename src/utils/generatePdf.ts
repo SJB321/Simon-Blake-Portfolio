@@ -1,10 +1,4 @@
 import React from 'react'
-// `pdf()` is typed to accept a <Document> element specifically. ResumePdf
-// returns a <Document> at runtime but TS doesn't know that — `any` is the
-// pragmatic escape hatch.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-import { pdf } from '@react-pdf/renderer'
-import { ResumePdf } from '../pdf/ResumePdf'
 import type { ResumePayload } from '../types/resume'
 
 let inFlight = false
@@ -13,10 +7,14 @@ let inFlight = false
  * Render the resume as a vector PDF (selectable text, ATS-readable) and
  * stream it to the browser as a download.
  *
- * Pass the resume payload from useResumeData() — keeps DB I/O out of this
- * module and lets us preview generation from the edit page if we ever want.
+ * Performance: `@react-pdf/renderer` is ~400 KB gzipped and ResumePdf pulls
+ * in two woff files. We deliberately use dynamic `import()` so that machinery
+ * is split into its own chunk and only fetched the first time someone clicks
+ * "Resume" — the public-site initial load no longer pays for it.
  */
-export async function generateResumePdf(data: ResumePayload | null | undefined): Promise<void> {
+export async function generateResumePdf(
+  data: ResumePayload | null | undefined,
+): Promise<void> {
   if (inFlight) return
   if (!data) {
     alert("Resume data isn't loaded yet. Wait a moment and try again.")
@@ -25,6 +23,13 @@ export async function generateResumePdf(data: ResumePayload | null | undefined):
   inFlight = true
 
   try {
+    // Load both modules in parallel on first invocation. Subsequent calls
+    // hit Vite's module cache so the import resolves instantly.
+    const [{ pdf }, { ResumePdf }] = await Promise.all([
+      import('@react-pdf/renderer'),
+      import('../pdf/ResumePdf'),
+    ])
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const element = React.createElement(ResumePdf, { data }) as any
     const blob = await pdf(element).toBlob()

@@ -96,7 +96,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function getResume(res: VercelResponse) {
+/** Load the canonical resume payload — shared by GET and PUT so both
+ *  responses are byte-identical. Lets the client skip a follow-up refetch
+ *  after save: PUT returns the same shape GET would have returned. */
+async function loadResumePayload() {
   const [profile, about, education, skillGroups, projects, experience, settings, themes] =
     await Promise.all([
       prisma.profile.findUnique({ where: { id: 1 } }),
@@ -113,12 +116,7 @@ async function getResume(res: VercelResponse) {
     ? themes.find((t) => t.id === settings.activeThemeId) ?? null
     : null
 
-  // Don't cache at the edge — content is editable and we need post-save
-  // refetches to see the latest data immediately. The function is cheap
-  // (one parallel Prisma read) so the perf cost is negligible.
-  res.setHeader('Cache-Control', 'no-store, must-revalidate')
-
-  return res.status(200).json({
+  return {
     profile,
     about,
     education,
@@ -128,7 +126,15 @@ async function getResume(res: VercelResponse) {
     themes,
     activeTheme,
     activeThemeId: settings?.activeThemeId ?? null,
-  })
+  }
+}
+
+async function getResume(res: VercelResponse) {
+  // Don't cache at the edge — content is editable and we need post-save
+  // refetches to see the latest data immediately. The function is cheap
+  // (one parallel Prisma read) so the perf cost is negligible.
+  res.setHeader('Cache-Control', 'no-store, must-revalidate')
+  return res.status(200).json(await loadResumePayload())
 }
 
 async function putResume(req: VercelRequest, res: VercelResponse) {
@@ -247,7 +253,10 @@ async function putResume(req: VercelRequest, res: VercelResponse) {
     }),
   ])
 
-  return res.status(200).json({ ok: true })
+  // Return the fresh canonical payload alongside `ok: true` so the client
+  // can update its state without an extra round-trip back to GET /api/resume.
+  const data = await loadResumePayload()
+  return res.status(200).json({ ok: true, data })
 }
 
 function validate(body: ResumeWriteBody): string[] {

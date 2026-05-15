@@ -41,7 +41,7 @@ interface RouteState {
 export default function EditResume() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { data, loading, error, refetch } = useResumeData()
+  const { data, loading, error, setData } = useResumeData()
 
   // Password arrives from the public page's password modal. We hold a
   // mutable copy in state so PasswordForm can update it after a change —
@@ -84,13 +84,12 @@ export default function EditResume() {
     setSaveError(null)
     setSaveSuccess(false)
     try {
-      await api.putResume(draft, password)
-      // Bypass any cache so the just-saved data is the version we re-render.
-      // Without this, an edge cache could return the pre-save snapshot and
-      // make the change look like it didn't apply.
-      const fresh = await api.getResume({ fresh: true })
+      // PUT now returns the fresh canonical payload, so we don't need two
+      // follow-up GETs to refresh the draft and the context. One round-trip
+      // total instead of three.
+      const { data: fresh } = await api.putResume(draft, password)
       setDraft(deepClone(fresh))
-      await refetch({ fresh: true })
+      setData(fresh)
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 3000)
     } catch (err) {

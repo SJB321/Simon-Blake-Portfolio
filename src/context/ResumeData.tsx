@@ -20,6 +20,9 @@ interface ResumeDataContextValue {
   loading: boolean
   error: Error | null
   refetch: (opts?: { fresh?: boolean }) => Promise<void>
+  /** Replace the cached payload directly — used after a save that already
+   *  returned the fresh data, so we skip a redundant GET round-trip. */
+  setData: (next: ResumePayload) => void
 }
 
 const ResumeDataContext = createContext<ResumeDataContextValue | null>(null)
@@ -51,7 +54,9 @@ export function ResumeDataProvider({ children }: { children: ReactNode }) {
   }, [load])
 
   return (
-    <ResumeDataContext.Provider value={{ data, loading, error, refetch: load }}>
+    <ResumeDataContext.Provider
+      value={{ data, loading, error, refetch: load, setData }}
+    >
       {children}
     </ResumeDataContext.Provider>
   )

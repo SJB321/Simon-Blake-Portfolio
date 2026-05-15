@@ -96,9 +96,15 @@ export const api = {
   /**
    * Save the full resume. Admin password is sent as a header (held in memory
    * by the editing UI; never persisted to localStorage).
+   *
+   * Response carries the fresh canonical payload — callers should use that
+   * directly to update local state and skip the follow-up GET round-trip.
    */
-  putResume: (payload: ResumePayload, password: string | undefined): Promise<OkResponse> =>
-    request<OkResponse>('/api/resume', {
+  putResume: (
+    payload: ResumePayload,
+    password: string | undefined,
+  ): Promise<{ ok: true; data: ResumePayload }> =>
+    request('/api/resume', {
       method: 'PUT',
       headers: { 'X-Admin-Password': password ?? '' },
       body: JSON.stringify(payload),
