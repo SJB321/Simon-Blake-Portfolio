@@ -63,6 +63,14 @@ async function updateTheme(
         body.bodyFontUrl === undefined ? undefined : emptyToNull(body.bodyFontUrl),
       accentColor:
         typeof body.accentColor === 'string' ? body.accentColor : undefined,
+      backgroundColor:
+        typeof body.backgroundColor === 'string' ? body.backgroundColor : undefined,
+      cardBackgroundColor:
+        typeof body.cardBackgroundColor === 'string'
+          ? body.cardBackgroundColor
+          : undefined,
+      cardBorderColor:
+        typeof body.cardBorderColor === 'string' ? body.cardBorderColor : undefined,
       spacing:
         body.spacing === undefined ? undefined : normalizeSpacing(body.spacing),
     },

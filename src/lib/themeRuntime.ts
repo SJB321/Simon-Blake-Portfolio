@@ -33,6 +33,24 @@ function removeFontLink(key: string): void {
 }
 
 /**
+ * Eagerly load a Google Fonts stylesheet so the editor preview can render
+ * with the actual font. Idempotent — multiple calls with the same URL just
+ * leave the existing tag in place. Distinct from applyTheme's font links
+ * (which use reserved keys 'heading' and 'body') by using a 'preview-' prefix.
+ */
+export function preloadFontForPreview(url: string | null | undefined): void {
+  if (!url) return
+  const key = `preview-${hash(url)}`
+  ensureFontLink(url, key)
+}
+
+function hash(s: string): string {
+  let h = 0
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0
+  return Math.abs(h).toString(36)
+}
+
+/**
  * Set the CSS variables that drive Tailwind's accent/font/spacing utilities,
  * plus load any required Google Fonts stylesheet. Returns a function that
  * resets everything back to defaults — call on unmount.
@@ -45,8 +63,11 @@ export function applyTheme(theme: Theme | null): () => void {
     return () => {} // nothing to undo
   }
 
-  // CSS variables
+  // CSS variables — typography, colors, and spacing scale.
   body.style.setProperty('--theme-accent', theme.accentColor)
+  body.style.setProperty('--theme-bg', theme.backgroundColor)
+  body.style.setProperty('--theme-card-bg', theme.cardBackgroundColor)
+  body.style.setProperty('--theme-card-border', theme.cardBorderColor)
   body.style.setProperty(
     '--theme-heading-font',
     quoteFontName(theme.headingFont),
@@ -74,6 +95,9 @@ export function applyTheme(theme: Theme | null): () => void {
 function clearThemeVars(): void {
   const body = document.body
   body.style.removeProperty('--theme-accent')
+  body.style.removeProperty('--theme-bg')
+  body.style.removeProperty('--theme-card-bg')
+  body.style.removeProperty('--theme-card-border')
   body.style.removeProperty('--theme-heading-font')
   body.style.removeProperty('--theme-body-font')
   body.style.removeProperty('--theme-section-scale')

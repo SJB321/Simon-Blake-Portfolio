@@ -19,7 +19,10 @@ export default function Experience() {
         <ol className="mt-12 border-l border-stone-200 ml-3 space-y-10">
           {experience.map((job, i) => (
             <Reveal key={job.id ?? `${job.company}-${i}`} as="li" delay={i * 100} className="pl-8 relative">
-              <span className="absolute -left-[6.5px] top-1.5 h-3 w-3 rounded-full bg-stone-50 border-2 border-accent" />
+              <span
+                className="absolute -left-[6.5px] top-1.5 h-3 w-3 rounded-full border-2 border-accent"
+                style={{ backgroundColor: 'var(--theme-bg, #fafaf9)' }}
+              />
 
               <div className="flex items-start gap-4">
                 {job.imageUrl && (

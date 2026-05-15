@@ -185,53 +185,115 @@ async function main() {
 
   // Seed three starter themes so the admin opens to a populated library.
   // Only insert if there are no themes yet — never clobber user-saved ones.
-  const themeCount = await prisma.theme.count()
-  if (themeCount === 0) {
-    const starterThemes = [
+  // One-time cleanup of starter themes that were renamed in this version.
+  // Safe to leave in long-term — these names are no longer seeded.
+  const supersededNames = ['Modern Editorial', 'Studio Compact']
+  const supersededDeleted = await prisma.theme.deleteMany({
+    where: { name: { in: supersededNames } },
+  })
+  if (supersededDeleted.count > 0) {
+    console.log(
+      `  ↻ removed ${supersededDeleted.count} superseded starter theme(s)`,
+    )
+  }
+
+  // Seed starter themes. Safe to re-run: each is upserted by name, so a theme
+  // the user has hand-edited (different name) is never touched. Existing
+  // theme rows with these *exact* names are refreshed to canonical values.
+  const _starterThemesAlwaysCreate = [
       {
+        // 1. The current look — neutral, classic, navy.
         name: 'Stone Serif (Default)',
-        description: 'The current look — Source Serif headings, Source Sans body, deep navy accent.',
+        description:
+          'The current look — clean off-white page, white cards, navy accent. Comfortable spacing.',
         headingFont: 'Source Serif 4',
         bodyFont: 'Source Sans 3',
         accentColor: '#1e3a5f',
+        backgroundColor: '#fafaf9',
+        cardBackgroundColor: '#ffffff',
+        cardBorderColor: '#e7e5e4',
         spacing: 'comfortable',
       },
       {
-        name: 'Modern Editorial',
-        description: 'Playfair Display headings, Inter body. Warmer accent.',
+        // 2. Warm, magazine-style — fully serif, cream paper, sienna accent,
+        //    spacious section gaps to feel airy.
+        name: 'Warm Editorial',
+        description:
+          'Magazine-style serif on cream paper. Sienna accent, spacious rhythm. Both heading and body in serif.',
         headingFont: 'Playfair Display',
-        headingFontUrl: 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap',
-        bodyFont: 'Inter',
-        bodyFontUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-        accentColor: '#7c3a2f',
-        spacing: 'comfortable',
+        headingFontUrl:
+          'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap',
+        bodyFont: 'Lora',
+        bodyFontUrl:
+          'https://fonts.googleapis.com/css2?family=Lora:wght@400;500;700&display=swap',
+        accentColor: '#9c3d2a',
+        backgroundColor: '#faf6f0',
+        cardBackgroundColor: '#fffaf2',
+        cardBorderColor: '#e8dccb',
+        spacing: 'spacious',
       },
       {
-        name: 'Studio Compact',
-        description: 'IBM Plex Serif + Plex Sans, slate accent, tighter spacing.',
+        // 3. Modern technical — slate accent, cool gray surfaces, both Plex
+        //    fonts, tighter spacing for an information-dense feel.
+        name: 'Studio Minimal',
+        description:
+          'Cool grays, slate accent, IBM Plex pair. Compact spacing for an information-dense, technical feel.',
         headingFont: 'IBM Plex Serif',
-        headingFontUrl: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&display=swap',
+        headingFontUrl:
+          'https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&display=swap',
         bodyFont: 'IBM Plex Sans',
-        bodyFontUrl: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap',
-        accentColor: '#334155',
+        bodyFontUrl:
+          'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap',
+        accentColor: '#475569',
+        backgroundColor: '#f1f5f9',
+        cardBackgroundColor: '#ffffff',
+        cardBorderColor: '#cbd5e1',
         spacing: 'compact',
       },
+      {
+        // 4. Bold geometric — all sans, single-font typography (Work Sans
+        //    everywhere with weight contrast). High-contrast pink accent on
+        //    white. Stronger borders for graphic definition.
+        name: 'Bold Geometric',
+        description:
+          'High-contrast, sans-only typography with a bold pink accent. Strong card borders for graphic definition.',
+        headingFont: 'Work Sans',
+        headingFontUrl:
+          'https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap',
+        bodyFont: 'Work Sans',
+        bodyFontUrl:
+          'https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap',
+        accentColor: '#db2777',
+        backgroundColor: '#ffffff',
+        cardBackgroundColor: '#fafaf9',
+        cardBorderColor: '#1c1917',
+        spacing: 'comfortable',
+      },
     ]
-    for (const t of starterThemes) {
-      await prisma.theme.create({ data: t })
-    }
-    // Activate the default
-    const def = await prisma.theme.findUnique({ where: { name: 'Stone Serif (Default)' } })
+  for (const t of _starterThemesAlwaysCreate) {
+    await prisma.theme.upsert({
+      where: { name: t.name },
+      create: t,
+      update: t,
+    })
+  }
+  // Activate the default — but only if no theme is currently active. This
+  // way re-seeding never overrides a user's active-theme choice.
+  const settings = await prisma.settings.findUnique({ where: { id: 1 } })
+  if (!settings?.activeThemeId) {
+    const def = await prisma.theme.findUnique({
+      where: { name: 'Stone Serif (Default)' },
+    })
     if (def) {
       await prisma.settings.update({
         where: { id: 1 },
         data: { activeThemeId: def.id },
       })
     }
-    console.log(`  ✓ themes (${starterThemes.length}) seeded; default activated`)
-  } else {
-    console.log(`  ↻ themes already present (${themeCount}); not touching`)
   }
+  console.log(
+    `  ✓ themes (${_starterThemesAlwaysCreate.length}) upserted by name`,
+  )
 
   console.log('✔ seed complete')
 }

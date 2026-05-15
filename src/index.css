@@ -7,12 +7,21 @@
     scroll-behavior: smooth;
   }
 
+  /* Body background is themable via `--theme-bg`. The radial-gradient overlay
+     keeps the subtle navy "atmosphere" — but only when no theme is active.
+     When a theme is set, the overlay clears so the theme's background reads
+     as a clean flat color. */
   body {
-    background-color: #fafaf9;
+    background-color: var(--theme-bg, #fafaf9);
     background-image:
       radial-gradient(60rem 40rem at 80% -10%, rgba(30, 58, 95, 0.04), transparent 60%),
       radial-gradient(50rem 30rem at -10% 30%, rgba(30, 58, 95, 0.03), transparent 60%);
     background-attachment: fixed;
+  }
+  /* When a theme provides its own background, drop the navy gradient so the
+     theme color reads cleanly. */
+  body[style*="--theme-bg"] {
+    background-image: none;
   }
 
   ::selection {
@@ -60,9 +69,18 @@
     @apply mt-4 max-w-2xl text-stone-600 leading-relaxed;
   }
 
+  /* `.card` is themable via `--theme-card-bg` and `--theme-card-border`.
+     Fallbacks match the original stone palette so the edit page (which
+     never sets these vars) renders identically to before. */
   .card {
-    @apply rounded-xl border border-stone-200 bg-white
-           transition duration-300 hover:border-stone-300 hover:shadow-sm;
+    @apply rounded-xl transition duration-300 hover:shadow-sm;
+    background-color: var(--theme-card-bg, #ffffff);
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--theme-card-border, #e7e5e4);
+  }
+  .card:hover {
+    border-color: var(--theme-card-border-hover, var(--theme-card-border, #d6d3d1));
   }
 
   .btn {

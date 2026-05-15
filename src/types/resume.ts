@@ -86,6 +86,9 @@ export interface Theme {
   bodyFont: string
   bodyFontUrl: string | null
   accentColor: string
+  backgroundColor: string
+  cardBackgroundColor: string
+  cardBorderColor: string
   spacing: 'compact' | 'comfortable' | 'spacious' | string
   createdAt: string
   updatedAt: string

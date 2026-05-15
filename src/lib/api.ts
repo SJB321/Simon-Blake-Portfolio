@@ -11,6 +11,9 @@ export interface ThemeInput {
   bodyFont: string
   bodyFontUrl?: string | null
   accentColor: string
+  backgroundColor: string
+  cardBackgroundColor: string
+  cardBorderColor: string
   spacing: string
 }
 

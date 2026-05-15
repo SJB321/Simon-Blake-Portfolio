@@ -17,6 +17,9 @@ interface ThemeBody {
   bodyFont?: string
   bodyFontUrl?: string | null
   accentColor?: string
+  backgroundColor?: string
+  cardBackgroundColor?: string
+  cardBorderColor?: string
   spacing?: string
 }
 
@@ -65,6 +68,9 @@ async function createTheme(req: VercelRequest, res: VercelResponse) {
       bodyFont: body.bodyFont || 'Source Sans 3',
       bodyFontUrl: emptyToNull(body.bodyFontUrl),
       accentColor: body.accentColor || '#1e3a5f',
+      backgroundColor: body.backgroundColor || '#fafaf9',
+      cardBackgroundColor: body.cardBackgroundColor || '#ffffff',
+      cardBorderColor: body.cardBorderColor || '#e7e5e4',
       spacing: normalizeSpacing(body.spacing),
     },
   })
@@ -80,9 +86,16 @@ export function validate(
 
   if (opts.requireName && !trimmed(body.name)) errors.push('name is required')
 
-  if (body.accentColor !== undefined && body.accentColor !== null) {
-    if (!/^#([0-9a-fA-F]{3}){1,2}$/.test(body.accentColor)) {
-      errors.push('accentColor must be a hex like #1e3a5f')
+  const hexRe = /^#([0-9a-fA-F]{3}){1,2}$/
+  const colorFields = [
+    ['accentColor', body.accentColor],
+    ['backgroundColor', body.backgroundColor],
+    ['cardBackgroundColor', body.cardBackgroundColor],
+    ['cardBorderColor', body.cardBorderColor],
+  ] as const
+  for (const [name, value] of colorFields) {
+    if (value !== undefined && value !== null && !hexRe.test(value)) {
+      errors.push(`${name} must be a hex like #1e3a5f`)
     }
   }
 

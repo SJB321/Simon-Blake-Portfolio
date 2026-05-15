@@ -166,12 +166,13 @@ function ThemeCard({
             </p>
           )}
         </div>
-        <div
-          aria-hidden
-          className="h-6 w-6 shrink-0 rounded-full border border-stone-200"
-          style={{ background: theme.accentColor }}
-          title={theme.accentColor}
-        />
+        {/* Color swatches — accent / page bg / card bg / card border */}
+        <div className="flex shrink-0 gap-0.5" aria-hidden>
+          <ColorSwatch color={theme.accentColor} title={`Accent ${theme.accentColor}`} />
+          <ColorSwatch color={theme.backgroundColor} title={`Background ${theme.backgroundColor}`} />
+          <ColorSwatch color={theme.cardBackgroundColor} title={`Box ${theme.cardBackgroundColor}`} />
+          <ColorSwatch color={theme.cardBorderColor} title={`Border ${theme.cardBorderColor}`} />
+        </div>
       </div>
 
       <dl className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-stone-500">
@@ -196,6 +197,7 @@ function ThemeCard({
       </dl>
 
       <div className="mt-4 flex items-center justify-end gap-1">
+        {/* (Action buttons below) */}
         {!isActive && (
           <button
             type="button"
@@ -226,5 +228,15 @@ function ThemeCard({
         </button>
       </div>
     </li>
+  )
+}
+
+function ColorSwatch({ color, title }: { color: string; title: string }) {
+  return (
+    <div
+      title={title}
+      className="h-5 w-5 rounded-full border border-stone-300"
+      style={{ background: color }}
+    />
   )
 }

@@ -144,7 +144,15 @@ model Theme {
 
   // Accent color (hex). Drives buttons, links, eyebrows, dots, divider dots,
   // and PDF section headings.
-  accentColor     String   @default("#1e3a5f")
+  accentColor       String   @default("#1e3a5f")
+
+  // Page background — the body color behind everything.
+  backgroundColor   String   @default("#fafaf9")
+
+  // "Box" colors — the card surfaces (project cards, education card, etc.)
+  // and the outline color around them.
+  cardBackgroundColor String @default("#ffffff")
+  cardBorderColor     String @default("#e7e5e4")
 
   // Spacing preset: 'compact' | 'comfortable' | 'spacious'.
   // Maps to a CSS variable that scales section padding on the public site.

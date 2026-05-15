@@ -1,6 +1,6 @@
 // Create / edit a theme. Modal form with all the visual knobs.
 
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { X } from 'lucide-react'
 import { api, type ThemeInput } from '../../lib/api'
 import {
@@ -11,6 +11,7 @@ import {
   type FontPreset,
   type SpacingOption,
 } from '../../lib/fontPresets'
+import { preloadFontForPreview } from '../../lib/themeRuntime'
 import type { Theme } from '../../types/resume'
 
 interface ThemeEditorProps {
@@ -31,6 +32,9 @@ interface DraftState {
   bodyFont: string
   bodyFontUrl: string
   accentColor: string
+  backgroundColor: string
+  cardBackgroundColor: string
+  cardBorderColor: string
   spacing: SpacingOption
 }
 
@@ -53,6 +57,9 @@ function initialDraft(theme?: Theme): DraftState {
       bodyFont: theme.bodyFont,
       bodyFontUrl: theme.bodyFontUrl ?? '',
       accentColor: normalizeHex(theme.accentColor),
+      backgroundColor: normalizeHex(theme.backgroundColor),
+      cardBackgroundColor: normalizeHex(theme.cardBackgroundColor),
+      cardBorderColor: normalizeHex(theme.cardBorderColor),
       spacing,
     }
   }
@@ -66,6 +73,9 @@ function initialDraft(theme?: Theme): DraftState {
     bodyFont: BODY_PRESETS[0].name,
     bodyFontUrl: '',
     accentColor: '#1e3a5f',
+    backgroundColor: '#fafaf9',
+    cardBackgroundColor: '#ffffff',
+    cardBorderColor: '#e7e5e4',
     spacing: 'comfortable',
   }
 }
@@ -81,6 +91,27 @@ export default function ThemeEditor({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Preview can't render a font that hasn't been loaded yet. Eagerly load
+  // the stylesheet for the currently-selected fonts so the preview reflects
+  // them live. Idempotent — switching presets just adds another <link>.
+  useEffect(() => {
+    if (draft.headingMode === 'preset') {
+      const preset = findPreset(draft.headingFont, HEADING_PRESETS)
+      preloadFontForPreview(preset?.googleFontUrl ?? null)
+    } else {
+      preloadFontForPreview(draft.headingFontUrl || null)
+    }
+  }, [draft.headingMode, draft.headingFont, draft.headingFontUrl])
+
+  useEffect(() => {
+    if (draft.bodyMode === 'preset') {
+      const preset = findPreset(draft.bodyFont, BODY_PRESETS)
+      preloadFontForPreview(preset?.googleFontUrl ?? null)
+    } else {
+      preloadFontForPreview(draft.bodyFontUrl || null)
+    }
+  }, [draft.bodyMode, draft.bodyFont, draft.bodyFontUrl])
+
   const set = <K extends keyof DraftState>(key: K, value: DraftState[K]) => {
     setDraft((d) => ({ ...d, [key]: value }))
   }
@@ -92,9 +123,18 @@ export default function ThemeEditor({
       setError('Name is required.')
       return
     }
-    if (!/^#([0-9a-fA-F]{3}){1,2}$/.test(draft.accentColor)) {
-      setError('Accent color must be a hex value like #1e3a5f.')
-      return
+    const hexRe = /^#([0-9a-fA-F]{3}){1,2}$/
+    const colorChecks: Array<[label: string, value: string]> = [
+      ['Accent color', draft.accentColor],
+      ['Background color', draft.backgroundColor],
+      ['Card background color', draft.cardBackgroundColor],
+      ['Card border color', draft.cardBorderColor],
+    ]
+    for (const [label, value] of colorChecks) {
+      if (!hexRe.test(value)) {
+        setError(`${label} must be a hex value like #1e3a5f.`)
+        return
+      }
     }
     if (draft.headingMode === 'custom' && !draft.headingFont.trim()) {
       setError('Custom heading font name cannot be empty.')
@@ -207,25 +247,32 @@ export default function ThemeEditor({
             onFontUrlChange={(url) => set('bodyFontUrl', url)}
           />
 
-          <Field
-            label="Accent color"
-            hint="Drives buttons, links, eyebrow labels, and PDF section headings."
-          >
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={draft.accentColor}
-                onChange={(e) => set('accentColor', e.target.value)}
-                className="h-9 w-12 cursor-pointer rounded border border-stone-300 bg-white"
-              />
-              <Input
-                value={draft.accentColor}
-                onChange={(e) => set('accentColor', e.target.value)}
-                className="font-mono"
-                placeholder="#1e3a5f"
-              />
-            </div>
-          </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <ColorField
+              label="Accent color"
+              hint="Buttons, links, eyebrows, PDF headings."
+              value={draft.accentColor}
+              onChange={(v) => set('accentColor', v)}
+            />
+            <ColorField
+              label="Page background"
+              hint="The body color behind everything."
+              value={draft.backgroundColor}
+              onChange={(v) => set('backgroundColor', v)}
+            />
+            <ColorField
+              label="Box background"
+              hint="Card surfaces — projects, education, contact, skills."
+              value={draft.cardBackgroundColor}
+              onChange={(v) => set('cardBackgroundColor', v)}
+            />
+            <ColorField
+              label="Box border"
+              hint="Outline color around cards."
+              value={draft.cardBorderColor}
+              onChange={(v) => set('cardBorderColor', v)}
+            />
+          </div>
 
           <Field label="Spacing">
             <div className="flex gap-2">
@@ -308,6 +355,9 @@ function buildPayload(draft: DraftState): ThemeInput {
     bodyFont: bodyFont.trim(),
     bodyFontUrl,
     accentColor: normalizeHex(draft.accentColor),
+    backgroundColor: normalizeHex(draft.backgroundColor),
+    cardBackgroundColor: normalizeHex(draft.cardBackgroundColor),
+    cardBorderColor: normalizeHex(draft.cardBorderColor),
     spacing: draft.spacing,
   }
 }
@@ -319,6 +369,37 @@ function normalizeHex(v: string): string {
 }
 
 /* ───────────────────────────── sub-components ───────────────────────────── */
+
+function ColorField({
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  label: string
+  hint?: string
+  value: string
+  onChange: (v: string) => void
+}) {
+  return (
+    <Field label={label} hint={hint}>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-9 w-10 shrink-0 cursor-pointer rounded border border-stone-300 bg-white"
+        />
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="font-mono"
+          placeholder="#1e3a5f"
+        />
+      </div>
+    </Field>
+  )
+}
 
 function Field({
   label,
@@ -448,43 +529,54 @@ function FontPickerField({
   )
 }
 
-/** A small live preview of the theme using DOM styles (not CSS vars, so it
- *  doesn't have to wait for the theme to be saved + activated to see it). */
+/** A small live preview of the theme using inline styles so it reflects
+ *  changes immediately, without saving + activating the theme. Mirrors the
+ *  public site's structure: a body-colored frame containing a card. */
 function ThemePreview({ draft }: { draft: DraftState }) {
   return (
-    <div className="rounded-lg border border-stone-200 bg-stone-50/60 p-4">
-      <p className="text-[10px] uppercase tracking-wider text-stone-500 font-medium">
+    <div className="rounded-lg border border-stone-200 overflow-hidden">
+      <p className="text-[10px] uppercase tracking-wider text-stone-500 font-medium bg-stone-50 px-4 py-2 border-b border-stone-200">
         Preview
       </p>
       <div
-        className="mt-2 rounded-md bg-white border border-stone-200 p-4"
+        className="p-6"
         style={{
+          background: draft.backgroundColor,
           fontFamily: `"${draft.bodyFont}", system-ui, sans-serif`,
         }}
       >
-        <p
-          className="text-[10px] uppercase tracking-wider font-medium"
-          style={{ color: draft.accentColor }}
-        >
-          Section eyebrow
-        </p>
-        <h3
-          className="mt-1 text-xl font-semibold tracking-tight text-stone-900"
+        <div
+          className="rounded-lg p-4"
           style={{
-            fontFamily: `"${draft.headingFont}", Georgia, serif`,
+            background: draft.cardBackgroundColor,
+            border: `1px solid ${draft.cardBorderColor}`,
           }}
         >
-          A section heading
-        </h3>
-        <p className="mt-2 text-sm text-stone-600">
-          The body text shows in this font. Buttons and links pick up the accent color.
-        </p>
-        <span
-          className="mt-3 inline-flex items-center rounded-md px-3 py-1 text-xs font-medium text-white"
-          style={{ background: draft.accentColor }}
-        >
-          Accent
-        </span>
+          <p
+            className="text-[10px] uppercase tracking-wider font-medium"
+            style={{ color: draft.accentColor }}
+          >
+            Section eyebrow
+          </p>
+          <h3
+            className="mt-1 text-xl font-semibold tracking-tight text-stone-900"
+            style={{
+              fontFamily: `"${draft.headingFont}", Georgia, serif`,
+            }}
+          >
+            A section heading
+          </h3>
+          <p className="mt-2 text-sm text-stone-600">
+            The body text shows in this font. Cards use the box colors. Buttons and
+            links pick up the accent color.
+          </p>
+          <span
+            className="mt-3 inline-flex items-center rounded-md px-3 py-1 text-xs font-medium text-white"
+            style={{ background: draft.accentColor }}
+          >
+            Accent
+          </span>
+        </div>
       </div>
     </div>
   )
