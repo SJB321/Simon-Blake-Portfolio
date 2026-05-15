@@ -417,6 +417,13 @@ function StringList({
   aiAssist,
 }: StringListProps) {
   const items = Array.isArray(values) ? values : []
+  // Keep a ref to the most recent items so onApply callbacks (which are
+  // captured at render time by AiAssistedField) read the *current* array
+  // when applied. Without this, two concurrent AI requests on different
+  // rows would each apply against a stale snapshot — the second Apply
+  // would silently revert the first.
+  const itemsRef = useRef(items)
+  itemsRef.current = items
   return (
     <div className="space-y-2">
       {items.map((value, i) => {
@@ -455,7 +462,9 @@ function StringList({
                 label={aiAssist.label}
                 value={value}
                 onApply={(text) => {
-                  const next = [...items]
+                  // Read the latest items via ref so concurrent applies on
+                  // different rows compose correctly.
+                  const next = [...itemsRef.current]
                   next[i] = text
                   onChange(next)
                 }}
@@ -619,6 +628,10 @@ function AboutForm({ about, onChange, password, getResume }: AboutFormProps) {
   }
   const set = <K extends keyof AboutModel>(key: K, val: AboutModel[K]) =>
     onChange({ ...safeAbout, [key]: val })
+  // See the matching ref in StringList — needed so concurrent AI Apply
+  // clicks across paragraphs don't clobber each other via stale closures.
+  const paragraphsRef = useRef(safeAbout.paragraphs)
+  paragraphsRef.current = safeAbout.paragraphs
   return (
     <div className="space-y-4">
       <Field label="About paragraphs" hint="Each entry becomes a paragraph on the public site.">
@@ -630,7 +643,7 @@ function AboutForm({ about, onChange, password, getResume }: AboutFormProps) {
                   label="About paragraph"
                   value={p}
                   onApply={(text) => {
-                    const next = [...safeAbout.paragraphs]
+                    const next = [...paragraphsRef.current]
                     next[i] = text
                     set('paragraphs', next)
                   }}

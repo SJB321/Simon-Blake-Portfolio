@@ -11,7 +11,7 @@
 // Same auth as /api/ai/revise — admin password header.
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { requireAuth } from '../_lib/auth.js'
+import { requirePaidAuth } from '../_lib/auth.js'
 import {
   ADVISE_SYSTEM_PROMPT,
   AI_MODEL,
@@ -30,7 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Allow', 'POST')
     return res.status(405).json({ error: 'Method not allowed' })
   }
-  if (!(await requireAuth(req, res))) return
+  if (!(await requirePaidAuth(req, res))) return
 
   try {
     const body = (req.body || {}) as AdviseBody
@@ -91,13 +91,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 /**
  * Parse the model's bulleted response into a clean string[]. Tolerates "- ",
  * "* ", "• ", and numbered bullets in case the model drifts from the spec.
- * Strips empty lines and trims surrounding whitespace.
+ *
+ * If any line starts with a bullet marker, we treat the response as a bulleted
+ * list and discard everything else (preamble like "Here are some thoughts:"
+ * and closing prose like "Hope this helps!"). If NO line has a marker, we
+ * fall back to returning all non-empty lines so the user still sees the
+ * model's response rather than an empty UI.
  */
 function parseBullets(raw: string): string[] {
-  return raw
+  const bulletPattern = /^([-*•]|\d+[.)])\s+/
+  const lines = raw
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
-    .map((line) => line.replace(/^([-*•]|\d+[.)])\s+/, '').trim())
+
+  const hasBullets = lines.some((line) => bulletPattern.test(line))
+  if (!hasBullets) return lines
+
+  return lines
+    .filter((line) => bulletPattern.test(line))
+    .map((line) => line.replace(bulletPattern, '').trim())
     .filter(Boolean)
 }

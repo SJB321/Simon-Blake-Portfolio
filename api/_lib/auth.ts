@@ -66,3 +66,33 @@ export async function requireAuth(
   }
   return true
 }
+
+/**
+ * Stricter variant for endpoints that consume *paid* upstream resources
+ * (OpenAI, etc.). `requireAuth` allows open-mode (no password set) which is
+ * fine for editing your own resume, but would let anyone drain the AI budget
+ * if the URL is discovered while open-mode is active. Here we require a hash
+ * to exist before we even check the candidate.
+ */
+export async function requirePaidAuth(
+  req: VercelRequest,
+  res: VercelResponse,
+): Promise<boolean> {
+  const hash = await getPasswordHash()
+  if (!hash) {
+    res.status(401).json({
+      error:
+        'AI features require an admin password. Set one on the edit page before using AI.',
+    })
+    return false
+  }
+  const header = req.headers['x-admin-password']
+  const headerPassword = Array.isArray(header) ? header[0] : header
+  const candidate = typeof headerPassword === 'string' ? headerPassword : ''
+  const ok = await bcrypt.compare(candidate, hash)
+  if (!ok) {
+    res.status(401).json({ error: 'Invalid or missing admin password.' })
+    return false
+  }
+  return true
+}

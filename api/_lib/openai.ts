@@ -84,6 +84,12 @@ interface ResumeContextLike {
  * resume, not every word. Long impact bullets get clipped to 200 chars so a
  * giant project description doesn't blow the context window for the rest.
  */
+// Final cap on the serialized summary length. The per-field clips below
+// keep individual sections bounded, but a resume with hundreds of projects
+// could still blow past sane token counts. After all sections are joined,
+// we slice the result so the prompt — and the cost — stays predictable.
+const MAX_SUMMARY_CHARS = 8000
+
 export function summarizeResume(resume: ResumeContextLike | null): string {
   if (!resume) return '(no resume context available)'
   const parts: string[] = []
@@ -161,7 +167,10 @@ export function summarizeResume(resume: ResumeContextLike | null): string {
     parts.push(`Experience:\n${exp}`)
   }
 
-  return parts.join('\n\n')
+  const joined = parts.join('\n\n')
+  return joined.length > MAX_SUMMARY_CHARS
+    ? joined.slice(0, MAX_SUMMARY_CHARS - 1).trimEnd() + '\n…(truncated)'
+    : joined
 }
 
 function clip(s: string, max: number): string {
