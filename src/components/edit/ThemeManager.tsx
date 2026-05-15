@@ -17,7 +17,7 @@ interface ThemeManagerProps {
 }
 
 export default function ThemeManager({ password }: ThemeManagerProps) {
-  const { data, refetch, setData } = useResumeData()
+  const { data, setData } = useResumeData()
   const themes = data?.themes ?? []
   const activeId = data?.activeThemeId ?? null
 
@@ -26,20 +26,16 @@ export default function ThemeManager({ password }: ThemeManagerProps) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const refresh = async () => refetch({ fresh: true })
-
   /**
    * Activate a theme optimistically: update local context immediately so the
    * "Active" badge moves without waiting for the server. If the request fails
-   * we roll back via a fresh refetch. Removes ~300-800ms of perceived delay
-   * per activation click.
+   * we roll back. Removes ~300-800ms of perceived delay per click.
    */
   const handleActivate = async (id: number) => {
     if (busy || !data) return
     setBusy(true)
     setError(null)
 
-    // Snapshot for rollback
     const previous = data
     const nextTheme = data.themes.find((t) => t.id === id) ?? null
     setData({ ...data, activeThemeId: id, activeTheme: nextTheme })
@@ -47,7 +43,6 @@ export default function ThemeManager({ password }: ThemeManagerProps) {
     try {
       await api.setActiveTheme(id, password)
     } catch (err) {
-      // Roll back optimistic update on failure
       setData(previous)
       setError(err instanceof Error ? err.message : 'Activation failed')
     } finally {
@@ -55,20 +50,51 @@ export default function ThemeManager({ password }: ThemeManagerProps) {
     }
   }
 
+  /** Optimistic delete with rollback. Updates context immediately so the card
+   *  disappears, then issues the request. On failure restores the snapshot. */
   const handleDelete = async (theme: Theme) => {
-    if (busy) return
+    if (busy || !data) return
     const msg = `Delete theme "${theme.name}"? This can't be undone.`
     if (!confirm(msg)) return
     setBusy(true)
     setError(null)
+
+    const previous = data
+    const wasActive = data.activeThemeId === theme.id
+    setData({
+      ...data,
+      themes: data.themes.filter((t) => t.id !== theme.id),
+      activeTheme: wasActive ? null : data.activeTheme,
+      activeThemeId: wasActive ? null : data.activeThemeId,
+    })
+
     try {
       await api.deleteTheme(theme.id, password)
-      await refresh()
     } catch (err) {
+      setData(previous)
       setError(err instanceof Error ? err.message : 'Delete failed')
     } finally {
       setBusy(false)
     }
+  }
+
+  /** Merge a freshly-created theme into the context. Called by ThemeEditor
+   *  when the user saves a new theme — avoids a follow-up resume refetch. */
+  const handleCreated = (theme: Theme) => {
+    if (!data) return
+    setData({ ...data, themes: [...data.themes, theme] })
+    setCreating(false)
+  }
+
+  /** Replace an existing theme in the context with the just-saved version. */
+  const handleUpdated = (theme: Theme) => {
+    if (!data) return
+    setData({
+      ...data,
+      themes: data.themes.map((t) => (t.id === theme.id ? theme : t)),
+      activeTheme: data.activeTheme?.id === theme.id ? theme : data.activeTheme,
+    })
+    setEditing(null)
   }
 
   return (
@@ -113,10 +139,7 @@ export default function ThemeManager({ password }: ThemeManagerProps) {
           mode="create"
           password={password}
           onClose={() => setCreating(false)}
-          onSaved={async () => {
-            setCreating(false)
-            await refresh()
-          }}
+          onSaved={handleCreated}
         />
       )}
 
@@ -126,10 +149,7 @@ export default function ThemeManager({ password }: ThemeManagerProps) {
           theme={editing}
           password={password}
           onClose={() => setEditing(null)}
-          onSaved={async () => {
-            setEditing(null)
-            await refresh()
-          }}
+          onSaved={handleUpdated}
         />
       )}
     </div>

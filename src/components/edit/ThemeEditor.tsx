@@ -20,7 +20,9 @@ interface ThemeEditorProps {
   theme?: Theme
   password: string | undefined
   onClose: () => void
-  onSaved: () => void | Promise<void>
+  /** Called with the saved theme so the parent can merge it into context
+   *  directly, avoiding a follow-up resume refetch. */
+  onSaved: (theme: Theme) => void
 }
 
 interface DraftState {
@@ -186,12 +188,17 @@ export default function ThemeEditor({
 
     setSubmitting(true)
     try {
+      let saved: Theme
       if (mode === 'create') {
-        await api.createTheme(payload, password)
+        const result = await api.createTheme(payload, password)
+        saved = result.theme
       } else if (theme) {
-        await api.updateTheme(theme.id, payload, password)
+        const result = await api.updateTheme(theme.id, payload, password)
+        saved = result.theme
+      } else {
+        throw new Error('Editor in edit mode but no theme provided')
       }
-      await onSaved()
+      onSaved(saved)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Save failed')
     } finally {

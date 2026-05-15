@@ -65,13 +65,31 @@ export default function ImageManager({ password }: ImageManagerProps) {
     setUploading(true)
     setError(null)
     try {
-      // Upload sequentially so a single failure stops the rest.
+      // Upload sequentially so a single failure stops the rest. After each
+      // upload, prepend the new image to local state — no follow-up list
+      // refetch needed since the server response carries everything we need.
       for (const file of files) {
-        await api.uploadImage(file, password)
+        const result = await api.uploadImage(file, password)
+        setImages((prev) => {
+          // `prev` may be null if the initial load hadn't finished yet.
+          const existing = prev ?? []
+          // Server returns { name, url } — synthesize a full ImageItem so the
+          // gallery card can render without waiting for a list refetch.
+          const item: ImageItem = {
+            name: result.name,
+            url: result.url,
+            size: file.size,
+            contentType: file.type || null,
+            createdAt: new Date().toISOString(),
+          }
+          return [item, ...existing]
+        })
       }
-      await load()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
+      // Server is the source of truth — rehydrate from there if anything
+      // went wrong mid-batch.
+      void load()
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -91,10 +109,15 @@ export default function ImageManager({ password }: ImageManagerProps) {
     }
     if (!confirm(message)) return
 
+    // Optimistic remove — the gallery card disappears immediately.
+    const previous = images
+    setImages((prev) => (prev ?? []).filter((i) => i.name !== filename))
+
     try {
       await api.deleteImage(filename, password)
-      await load()
     } catch (err) {
+      // Roll back on failure
+      setImages(previous)
       setError(err instanceof Error ? err.message : 'Delete failed')
     }
   }

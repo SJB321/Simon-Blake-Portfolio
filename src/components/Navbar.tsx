@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Menu, X, FileText, PencilLine } from 'lucide-react'
 import { useResumeData } from '../context/ResumeData'
-import { generateResumePdf } from '../utils/generatePdf'
+import { generateResumePdf, prefetchResumePdf } from '../utils/generatePdf'
 import { api } from '../lib/api'
 
 const links = [
@@ -89,6 +89,8 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={handleResume}
+                onMouseEnter={prefetchResumePdf}
+                onFocus={prefetchResumePdf}
                 disabled={generating}
                 className="btn-secondary text-xs disabled:opacity-60 disabled:cursor-wait"
                 title="Download a PDF resume of this site"

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ArrowRight, FileText, FolderGit2, Mail } from 'lucide-react'
 import { useResumeData } from '../context/ResumeData'
-import { generateResumePdf } from '../utils/generatePdf'
+import { generateResumePdf, prefetchResumePdf } from '../utils/generatePdf'
 
 export default function Hero() {
   const { data } = useResumeData()
@@ -69,6 +69,8 @@ export default function Hero() {
             <button
               type="button"
               onClick={handleResume}
+              onMouseEnter={prefetchResumePdf}
+              onFocus={prefetchResumePdf}
               disabled={generating}
               className="btn-primary disabled:opacity-60 disabled:cursor-wait"
               title="Download a PDF resume of this site"

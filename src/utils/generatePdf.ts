@@ -2,6 +2,30 @@ import React from 'react'
 import type { ResumePayload } from '../types/resume'
 
 let inFlight = false
+let prefetched = false
+
+/**
+ * Warm up the PDF chunk so it's already cached by the time the user clicks
+ * "Resume". Called on Resume-button hover/focus from the navbar and hero —
+ * cuts ~500-1500 ms of perceived latency on click.
+ *
+ * Idempotent: runs the imports exactly once per session and resolves
+ * immediately on subsequent calls. The Promise itself doesn't matter — we
+ * just need the module-cache side-effect.
+ */
+export function prefetchResumePdf(): void {
+  if (prefetched) return
+  prefetched = true
+  // Fire-and-forget — errors are non-fatal since the user might never click.
+  Promise.all([
+    import('@react-pdf/renderer'),
+    import('../pdf/ResumePdf'),
+  ]).catch(() => {
+    // If prefetch fails (offline, network glitch), reset the flag so the
+    // real click handler can try again.
+    prefetched = false
+  })
+}
 
 /**
  * Render the resume as a vector PDF (selectable text, ATS-readable) and

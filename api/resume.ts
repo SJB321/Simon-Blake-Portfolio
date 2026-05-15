@@ -130,10 +130,18 @@ async function loadResumePayload() {
 }
 
 async function getResume(res: VercelResponse) {
-  // Don't cache at the edge — content is editable and we need post-save
-  // refetches to see the latest data immediately. The function is cheap
-  // (one parallel Prisma read) so the perf cost is negligible.
-  res.setHeader('Cache-Control', 'no-store, must-revalidate')
+  // Safe to edge-cache now: PUT /api/resume returns the fresh canonical
+  // payload directly, so the admin save flow never depends on this GET
+  // being uncached. Public visitors get a much faster page load —
+  // 0ms to serve from Vercel's edge, no Prisma round-trip.
+  //
+  //   max-age=0           browser always revalidates
+  //   s-maxage=60         edge cache for 60s
+  //   stale-while-revalidate=300  serve stale for 5min while refetching
+  res.setHeader(
+    'Cache-Control',
+    'public, max-age=0, s-maxage=60, stale-while-revalidate=300',
+  )
   return res.status(200).json(await loadResumePayload())
 }
 
