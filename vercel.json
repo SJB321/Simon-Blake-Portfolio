@@ -2,5 +2,7 @@
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/:path*" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
-  ]
+  ],
+  "$comment_regions": "Pin serverless functions to pdx1 (Vercel's Oregon region) so they run in the same AWS region as Supabase (aws-1-us-west-2). Saves ~50-150ms per Prisma query on cold paths by eliminating cross-country latency. Slight latency penalty for East Coast / EU visitors but DB-bound APIs benefit overall.",
+  "regions": ["pdx1"]
 }
