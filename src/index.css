@@ -33,7 +33,19 @@
   }
 
   .section {
-    @apply py-24 sm:py-28 scroll-mt-20;
+    /* Themable spacing — `--theme-section-scale` is set by themeRuntime.ts on
+       the public site (compact 0.65, comfortable 1.0, spacious 1.35). The
+       fallback `1` keeps the edit page at the original size. */
+    padding-top: calc(6rem * var(--theme-section-scale, 1));
+    padding-bottom: calc(6rem * var(--theme-section-scale, 1));
+    scroll-margin-top: 5rem;
+  }
+
+  @media (min-width: 640px) {
+    .section {
+      padding-top: calc(7rem * var(--theme-section-scale, 1));
+      padding-bottom: calc(7rem * var(--theme-section-scale, 1));
+    }
   }
 
   .section-eyebrow {

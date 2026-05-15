@@ -1,0 +1,491 @@
+// Create / edit a theme. Modal form with all the visual knobs.
+
+import { useState, type FormEvent } from 'react'
+import { X } from 'lucide-react'
+import { api, type ThemeInput } from '../../lib/api'
+import {
+  HEADING_PRESETS,
+  BODY_PRESETS,
+  SPACING_OPTIONS,
+  findPreset,
+  type FontPreset,
+  type SpacingOption,
+} from '../../lib/fontPresets'
+import type { Theme } from '../../types/resume'
+
+interface ThemeEditorProps {
+  mode: 'create' | 'edit'
+  theme?: Theme
+  password: string | undefined
+  onClose: () => void
+  onSaved: () => void | Promise<void>
+}
+
+interface DraftState {
+  name: string
+  description: string
+  headingMode: 'preset' | 'custom'
+  headingFont: string
+  headingFontUrl: string
+  bodyMode: 'preset' | 'custom'
+  bodyFont: string
+  bodyFontUrl: string
+  accentColor: string
+  spacing: SpacingOption
+}
+
+function initialDraft(theme?: Theme): DraftState {
+  if (theme) {
+    const headingPreset = findPreset(theme.headingFont, HEADING_PRESETS)
+    const bodyPreset = findPreset(theme.bodyFont, BODY_PRESETS)
+    const spacing: SpacingOption = (SPACING_OPTIONS as readonly string[]).includes(
+      theme.spacing,
+    )
+      ? (theme.spacing as SpacingOption)
+      : 'comfortable'
+    return {
+      name: theme.name,
+      description: theme.description ?? '',
+      headingMode: headingPreset ? 'preset' : 'custom',
+      headingFont: theme.headingFont,
+      headingFontUrl: theme.headingFontUrl ?? '',
+      bodyMode: bodyPreset ? 'preset' : 'custom',
+      bodyFont: theme.bodyFont,
+      bodyFontUrl: theme.bodyFontUrl ?? '',
+      accentColor: normalizeHex(theme.accentColor),
+      spacing,
+    }
+  }
+  return {
+    name: '',
+    description: '',
+    headingMode: 'preset',
+    headingFont: HEADING_PRESETS[0].name,
+    headingFontUrl: '',
+    bodyMode: 'preset',
+    bodyFont: BODY_PRESETS[0].name,
+    bodyFontUrl: '',
+    accentColor: '#1e3a5f',
+    spacing: 'comfortable',
+  }
+}
+
+export default function ThemeEditor({
+  mode,
+  theme,
+  password,
+  onClose,
+  onSaved,
+}: ThemeEditorProps) {
+  const [draft, setDraft] = useState<DraftState>(() => initialDraft(theme))
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const set = <K extends keyof DraftState>(key: K, value: DraftState[K]) => {
+    setDraft((d) => ({ ...d, [key]: value }))
+  }
+
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setError(null)
+    if (!draft.name.trim()) {
+      setError('Name is required.')
+      return
+    }
+    if (!/^#([0-9a-fA-F]{3}){1,2}$/.test(draft.accentColor)) {
+      setError('Accent color must be a hex value like #1e3a5f.')
+      return
+    }
+    if (draft.headingMode === 'custom' && !draft.headingFont.trim()) {
+      setError('Custom heading font name cannot be empty.')
+      return
+    }
+    if (draft.bodyMode === 'custom' && !draft.bodyFont.trim()) {
+      setError('Custom body font name cannot be empty.')
+      return
+    }
+
+    const payload = buildPayload(draft)
+
+    setSubmitting(true)
+    try {
+      if (mode === 'create') {
+        await api.createTheme(payload, password)
+      } else if (theme) {
+        await api.updateTheme(theme.id, payload, password)
+      }
+      await onSaved()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Save failed')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-sm px-4 py-8"
+      onClick={onClose}
+    >
+      <form
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={submit}
+        className="w-full max-w-2xl max-h-full flex flex-col rounded-xl border border-stone-200 bg-white shadow-lg overflow-hidden"
+      >
+        <header className="flex items-center justify-between border-b border-stone-100 px-5 py-3">
+          <h2 className="font-serif text-lg font-semibold text-stone-900">
+            {mode === 'create' ? 'New theme' : `Edit · ${theme?.name}`}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md p-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100"
+          >
+            <X size={16} />
+          </button>
+        </header>
+
+        <div className="overflow-auto p-5 space-y-5">
+          <Field label="Name *">
+            <Input
+              value={draft.name}
+              onChange={(e) => set('name', e.target.value)}
+              placeholder="Modern Editorial"
+            />
+          </Field>
+          <Field label="Description" hint="Shown on the theme card to help you remember what this look is.">
+            <Input
+              value={draft.description}
+              onChange={(e) => set('description', e.target.value)}
+              placeholder="Warm editorial — Playfair headings, soft red accent."
+            />
+          </Field>
+
+          <FontPickerField
+            label="Heading font"
+            presets={HEADING_PRESETS}
+            mode={draft.headingMode}
+            font={draft.headingFont}
+            fontUrl={draft.headingFontUrl}
+            onModeChange={(m) => {
+              if (m === 'preset' && draft.headingMode !== 'preset') {
+                set('headingFont', HEADING_PRESETS[0].name)
+                set('headingFontUrl', '')
+              }
+              set('headingMode', m)
+            }}
+            onFontChange={(name) => {
+              set('headingFont', name)
+              if (draft.headingMode === 'preset') {
+                const preset = findPreset(name, HEADING_PRESETS)
+                set('headingFontUrl', preset?.googleFontUrl ?? '')
+              }
+            }}
+            onFontUrlChange={(url) => set('headingFontUrl', url)}
+          />
+
+          <FontPickerField
+            label="Body font"
+            presets={BODY_PRESETS}
+            mode={draft.bodyMode}
+            font={draft.bodyFont}
+            fontUrl={draft.bodyFontUrl}
+            onModeChange={(m) => {
+              if (m === 'preset' && draft.bodyMode !== 'preset') {
+                set('bodyFont', BODY_PRESETS[0].name)
+                set('bodyFontUrl', '')
+              }
+              set('bodyMode', m)
+            }}
+            onFontChange={(name) => {
+              set('bodyFont', name)
+              if (draft.bodyMode === 'preset') {
+                const preset = findPreset(name, BODY_PRESETS)
+                set('bodyFontUrl', preset?.googleFontUrl ?? '')
+              }
+            }}
+            onFontUrlChange={(url) => set('bodyFontUrl', url)}
+          />
+
+          <Field
+            label="Accent color"
+            hint="Drives buttons, links, eyebrow labels, and PDF section headings."
+          >
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={draft.accentColor}
+                onChange={(e) => set('accentColor', e.target.value)}
+                className="h-9 w-12 cursor-pointer rounded border border-stone-300 bg-white"
+              />
+              <Input
+                value={draft.accentColor}
+                onChange={(e) => set('accentColor', e.target.value)}
+                className="font-mono"
+                placeholder="#1e3a5f"
+              />
+            </div>
+          </Field>
+
+          <Field label="Spacing">
+            <div className="flex gap-2">
+              {SPACING_OPTIONS.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => set('spacing', opt)}
+                  className={`flex-1 rounded-md border px-3 py-2 text-xs font-medium capitalize transition-colors ${
+                    draft.spacing === opt
+                      ? 'border-accent bg-accent/10 text-accent'
+                      : 'border-stone-300 text-stone-700 hover:border-stone-400'
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </Field>
+
+          <ThemePreview draft={draft} />
+
+          {error && (
+            <p className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+              {error}
+            </p>
+          )}
+        </div>
+
+        <footer className="flex items-center justify-end gap-2 border-t border-stone-100 px-5 py-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-secondary text-sm"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="btn-primary text-sm disabled:opacity-60 disabled:cursor-wait"
+          >
+            {submitting
+              ? 'Saving…'
+              : mode === 'create'
+                ? 'Create theme'
+                : 'Save changes'}
+          </button>
+        </footer>
+      </form>
+    </div>
+  )
+}
+
+/* ───────────────────────────── helpers ───────────────────────────── */
+
+function buildPayload(draft: DraftState): ThemeInput {
+  // For preset mode, look the preset back up to recover its Google Fonts URL
+  // (so a saved theme always has the URL needed to load itself on the public
+  // site, regardless of what was typed manually).
+  let headingFont = draft.headingFont
+  let headingFontUrl: string | null = draft.headingFontUrl || null
+  if (draft.headingMode === 'preset') {
+    const p = findPreset(headingFont, HEADING_PRESETS)
+    headingFontUrl = p?.googleFontUrl ?? null
+  }
+
+  let bodyFont = draft.bodyFont
+  let bodyFontUrl: string | null = draft.bodyFontUrl || null
+  if (draft.bodyMode === 'preset') {
+    const p = findPreset(bodyFont, BODY_PRESETS)
+    bodyFontUrl = p?.googleFontUrl ?? null
+  }
+
+  return {
+    name: draft.name.trim(),
+    description: draft.description.trim() || null,
+    headingFont: headingFont.trim(),
+    headingFontUrl,
+    bodyFont: bodyFont.trim(),
+    bodyFontUrl,
+    accentColor: normalizeHex(draft.accentColor),
+    spacing: draft.spacing,
+  }
+}
+
+function normalizeHex(v: string): string {
+  const s = v.trim()
+  if (!s) return '#000000'
+  return s.startsWith('#') ? s : `#${s}`
+}
+
+/* ───────────────────────────── sub-components ───────────────────────────── */
+
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string
+  hint?: string
+  children: React.ReactNode
+}) {
+  return (
+    <label className="block">
+      <span className="block text-xs font-medium text-stone-700">{label}</span>
+      <div className="mt-1">{children}</div>
+      {hint && <span className="block mt-1 text-[11px] text-stone-500">{hint}</span>}
+    </label>
+  )
+}
+
+function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className={`w-full rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm placeholder-stone-400 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${
+        props.className || ''
+      }`}
+    />
+  )
+}
+
+interface FontPickerFieldProps {
+  label: string
+  presets: FontPreset[]
+  mode: 'preset' | 'custom'
+  font: string
+  fontUrl: string
+  onModeChange: (mode: 'preset' | 'custom') => void
+  onFontChange: (name: string) => void
+  onFontUrlChange: (url: string) => void
+}
+
+function FontPickerField({
+  label,
+  presets,
+  mode,
+  font,
+  fontUrl,
+  onModeChange,
+  onFontChange,
+  onFontUrlChange,
+}: FontPickerFieldProps) {
+  return (
+    <Field
+      label={label}
+      hint={
+        mode === 'custom'
+          ? 'Type any Google Font family name (e.g. "Bebas Neue"). The PDF will fall back to a built-in serif/sans for safety.'
+          : 'Curated set — these load fast and work in both the live site and the PDF.'
+      }
+    >
+      <div className="space-y-2">
+        <div className="inline-flex rounded-md border border-stone-300 p-0.5 bg-stone-50">
+          <button
+            type="button"
+            onClick={() => onModeChange('preset')}
+            className={`px-3 py-1 text-xs rounded ${
+              mode === 'preset'
+                ? 'bg-white text-stone-900 shadow-sm'
+                : 'text-stone-500 hover:text-stone-800'
+            }`}
+          >
+            Preset
+          </button>
+          <button
+            type="button"
+            onClick={() => onModeChange('custom')}
+            className={`px-3 py-1 text-xs rounded ${
+              mode === 'custom'
+                ? 'bg-white text-stone-900 shadow-sm'
+                : 'text-stone-500 hover:text-stone-800'
+            }`}
+          >
+            Custom (Google Fonts)
+          </button>
+        </div>
+
+        {mode === 'preset' ? (
+          <select
+            value={font}
+            onChange={(e) => onFontChange(e.target.value)}
+            className="w-full rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          >
+            {presets.map((p) => (
+              <option key={p.name} value={p.name}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div className="space-y-2">
+            <Input
+              value={font}
+              onChange={(e) => onFontChange(e.target.value)}
+              placeholder="Bebas Neue"
+            />
+            <Input
+              value={fontUrl}
+              onChange={(e) => onFontUrlChange(e.target.value)}
+              placeholder="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap"
+            />
+            <p className="text-[11px] text-stone-500">
+              Paste the Google Fonts URL too — find it on{' '}
+              <a
+                href="https://fonts.google.com"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-accent"
+              >
+                fonts.google.com
+              </a>{' '}
+              under "Get embed code → @import / link".
+            </p>
+          </div>
+        )}
+      </div>
+    </Field>
+  )
+}
+
+/** A small live preview of the theme using DOM styles (not CSS vars, so it
+ *  doesn't have to wait for the theme to be saved + activated to see it). */
+function ThemePreview({ draft }: { draft: DraftState }) {
+  return (
+    <div className="rounded-lg border border-stone-200 bg-stone-50/60 p-4">
+      <p className="text-[10px] uppercase tracking-wider text-stone-500 font-medium">
+        Preview
+      </p>
+      <div
+        className="mt-2 rounded-md bg-white border border-stone-200 p-4"
+        style={{
+          fontFamily: `"${draft.bodyFont}", system-ui, sans-serif`,
+        }}
+      >
+        <p
+          className="text-[10px] uppercase tracking-wider font-medium"
+          style={{ color: draft.accentColor }}
+        >
+          Section eyebrow
+        </p>
+        <h3
+          className="mt-1 text-xl font-semibold tracking-tight text-stone-900"
+          style={{
+            fontFamily: `"${draft.headingFont}", Georgia, serif`,
+          }}
+        >
+          A section heading
+        </h3>
+        <p className="mt-2 text-sm text-stone-600">
+          The body text shows in this font. Buttons and links pick up the accent color.
+        </p>
+        <span
+          className="mt-3 inline-flex items-center rounded-md px-3 py-1 text-xs font-medium text-white"
+          style={{ background: draft.accentColor }}
+        >
+          Accent
+        </span>
+      </div>
+    </div>
+  )
+}

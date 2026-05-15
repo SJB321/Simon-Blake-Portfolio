@@ -77,6 +77,20 @@ export interface Experience {
   updatedAt: string
 }
 
+export interface Theme {
+  id: number
+  name: string
+  description: string | null
+  headingFont: string
+  headingFontUrl: string | null
+  bodyFont: string
+  bodyFontUrl: string | null
+  accentColor: string
+  spacing: 'compact' | 'comfortable' | 'spacious' | string
+  createdAt: string
+  updatedAt: string
+}
+
 /** What `GET /api/resume` returns. Any of the singletons may be null on a
  *  fresh database before seeding. */
 export interface ResumePayload {
@@ -86,6 +100,9 @@ export interface ResumePayload {
   skillGroups: SkillGroup[]
   projects: Project[]
   experience: Experience[]
+  themes: Theme[]
+  activeTheme: Theme | null
+  activeThemeId: number | null
 }
 
 /** Image stored in Supabase Storage, as surfaced by `GET /api/images`. */

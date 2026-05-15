@@ -183,6 +183,56 @@ async function main() {
   })
   console.log('  ✓ settings (no password configured; admin is open until you set one)')
 
+  // Seed three starter themes so the admin opens to a populated library.
+  // Only insert if there are no themes yet — never clobber user-saved ones.
+  const themeCount = await prisma.theme.count()
+  if (themeCount === 0) {
+    const starterThemes = [
+      {
+        name: 'Stone Serif (Default)',
+        description: 'The current look — Source Serif headings, Source Sans body, deep navy accent.',
+        headingFont: 'Source Serif 4',
+        bodyFont: 'Source Sans 3',
+        accentColor: '#1e3a5f',
+        spacing: 'comfortable',
+      },
+      {
+        name: 'Modern Editorial',
+        description: 'Playfair Display headings, Inter body. Warmer accent.',
+        headingFont: 'Playfair Display',
+        headingFontUrl: 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap',
+        bodyFont: 'Inter',
+        bodyFontUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+        accentColor: '#7c3a2f',
+        spacing: 'comfortable',
+      },
+      {
+        name: 'Studio Compact',
+        description: 'IBM Plex Serif + Plex Sans, slate accent, tighter spacing.',
+        headingFont: 'IBM Plex Serif',
+        headingFontUrl: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&display=swap',
+        bodyFont: 'IBM Plex Sans',
+        bodyFontUrl: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap',
+        accentColor: '#334155',
+        spacing: 'compact',
+      },
+    ]
+    for (const t of starterThemes) {
+      await prisma.theme.create({ data: t })
+    }
+    // Activate the default
+    const def = await prisma.theme.findUnique({ where: { name: 'Stone Serif (Default)' } })
+    if (def) {
+      await prisma.settings.update({
+        where: { id: 1 },
+        data: { activeThemeId: def.id },
+      })
+    }
+    console.log(`  ✓ themes (${starterThemes.length}) seeded; default activated`)
+  } else {
+    console.log(`  ↻ themes already present (${themeCount}); not touching`)
+  }
+
   console.log('✔ seed complete')
 }
 

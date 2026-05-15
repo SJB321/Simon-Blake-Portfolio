@@ -2,6 +2,7 @@
 // (filled by <ResumeDataProvider> at app root) and renders the existing
 // section components.
 
+import { useEffect } from 'react'
 import Navbar from '../components/Navbar'
 import Hero from '../components/Hero'
 import About from '../components/About'
@@ -12,9 +13,17 @@ import Education from '../components/Education'
 import Contact from '../components/Contact'
 import Footer from '../components/Footer'
 import { useResumeData } from '../context/ResumeData'
+import { applyTheme } from '../lib/themeRuntime'
 
 export default function PublicResume() {
   const { data, loading, error } = useResumeData()
+
+  // Apply the active theme whenever it changes; reset on unmount so the
+  // edit page (or any future routes) start from a clean baseline.
+  useEffect(() => {
+    const undo = applyTheme(data?.activeTheme ?? null)
+    return undo
+  }, [data?.activeTheme])
 
   if (loading) return <LoadingScreen />
   if (error) return <ErrorScreen error={error} />

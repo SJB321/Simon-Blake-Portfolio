@@ -1,11 +1,16 @@
 /** @type {import('tailwindcss').Config} */
+//
+// Accent color and the serif/sans font families are themable via CSS custom
+// properties applied to <body> by src/lib/themeRuntime.ts. The fallback
+// inside each `var(...)` is the original hardcoded value, so any page that
+// doesn't apply a theme (the edit page) renders exactly as before.
 export default {
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
       fontFamily: {
         sans: [
-          'Source Sans 3',
+          'var(--theme-body-font, "Source Sans 3")',
           'ui-sans-serif',
           'system-ui',
           '-apple-system',
@@ -14,7 +19,7 @@ export default {
           'sans-serif',
         ],
         serif: [
-          'Source Serif 4',
+          'var(--theme-heading-font, "Source Serif 4")',
           'ui-serif',
           'Georgia',
           'Cambria',
@@ -24,8 +29,8 @@ export default {
       },
       colors: {
         accent: {
-          DEFAULT: '#1e3a5f',
-          soft: '#3a587c',
+          DEFAULT: 'var(--theme-accent, #1e3a5f)',
+          soft: 'var(--theme-accent-soft, #3a587c)',
         },
       },
       animation: {

@@ -1,7 +1,18 @@
 // Tiny fetch wrapper for the resume API. Throws on non-2xx so callers can
 // `try { ... } catch (e) { setError(e) }` rather than checking response.ok.
 
-import type { ResumePayload, ImageItem } from '../types/resume'
+import type { ResumePayload, ImageItem, Theme } from '../types/resume'
+
+export interface ThemeInput {
+  name: string
+  description?: string | null
+  headingFont: string
+  headingFontUrl?: string | null
+  bodyFont: string
+  bodyFontUrl?: string | null
+  accentColor: string
+  spacing: string
+}
 
 interface ErrorBody {
   error?: string
@@ -133,6 +144,47 @@ export const api = {
       method: 'DELETE',
       headers: { 'X-Admin-Password': password ?? '' },
       body: JSON.stringify({ filename }),
+    }),
+
+  // ── Themes ────────────────────────────────────────────────
+  listThemes: (): Promise<{ themes: Theme[]; activeThemeId: number | null }> =>
+    request('/api/themes'),
+
+  createTheme: (
+    body: ThemeInput,
+    password: string | undefined,
+  ): Promise<{ theme: Theme }> =>
+    request('/api/themes', {
+      method: 'POST',
+      headers: { 'X-Admin-Password': password ?? '' },
+      body: JSON.stringify(body),
+    }),
+
+  updateTheme: (
+    id: number,
+    body: Partial<ThemeInput>,
+    password: string | undefined,
+  ): Promise<{ theme: Theme }> =>
+    request(`/api/themes/${id}`, {
+      method: 'PUT',
+      headers: { 'X-Admin-Password': password ?? '' },
+      body: JSON.stringify(body),
+    }),
+
+  deleteTheme: (id: number, password: string | undefined): Promise<OkResponse> =>
+    request(`/api/themes/${id}`, {
+      method: 'DELETE',
+      headers: { 'X-Admin-Password': password ?? '' },
+    }),
+
+  setActiveTheme: (
+    id: number | null,
+    password: string | undefined,
+  ): Promise<{ ok: true; activeThemeId: number | null }> =>
+    request('/api/themes/active', {
+      method: 'POST',
+      headers: { 'X-Admin-Password': password ?? '' },
+      body: JSON.stringify({ id }),
     }),
 }
 

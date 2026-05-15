@@ -21,6 +21,7 @@ import { ArrowLeft, Check, Plus, Trash2, KeyRound } from 'lucide-react'
 import { useResumeData } from '../context/ResumeData'
 import { api } from '../lib/api'
 import ImageManager, { ImagePicker } from '../components/edit/ImageManager'
+import ThemeManager from '../components/edit/ThemeManager'
 import type {
   Profile,
   About as AboutModel,
@@ -108,6 +109,13 @@ export default function EditResume() {
       <EditHeader onBack={handleCancel} />
 
       <main className="container-page max-w-4xl py-8 space-y-8 pb-32">
+        <Section
+          title="Themes"
+          description="Create and switch the visual style of the public site (and PDF). The active theme is applied immediately on save."
+        >
+          <ThemeManager password={password} />
+        </Section>
+
         <Section
           title="Image library"
           description="Upload and manage images that other sections can reference. Stored in Supabase Storage."

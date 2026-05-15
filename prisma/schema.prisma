@@ -118,8 +118,38 @@ model Experience {
 /// App-level settings. Singleton.
 /// passwordHash = null  → admin is unprotected (no password configured)
 /// passwordHash = "..." → bcrypt hash; admin endpoints require matching password
+/// activeThemeId        → which Theme the public site renders. null = built-in defaults.
 model Settings {
-  id           Int      @id @default(1)
-  passwordHash String?
-  updatedAt    DateTime @updatedAt
+  id            Int      @id @default(1)
+  passwordHash  String?
+  activeThemeId Int?
+  updatedAt     DateTime @updatedAt
+}
+
+/// Visual theme of the public site (and PDF, where supported).
+/// Multiple may exist; one is "active" via Settings.activeThemeId.
+model Theme {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  description     String?
+
+  // Typography — `font` holds a CSS-ready font-family value (e.g. "Lora",
+  // including any quotes). `fontUrl` is set when this is a custom Google
+  // Font we have to load dynamically; null when it's a curated preset
+  // that's already preloaded.
+  headingFont     String   @default("Source Serif 4")
+  headingFontUrl  String?
+  bodyFont        String   @default("Source Sans 3")
+  bodyFontUrl     String?
+
+  // Accent color (hex). Drives buttons, links, eyebrows, dots, divider dots,
+  // and PDF section headings.
+  accentColor     String   @default("#1e3a5f")
+
+  // Spacing preset: 'compact' | 'comfortable' | 'spacious'.
+  // Maps to a CSS variable that scales section padding on the public site.
+  spacing         String   @default("comfortable")
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

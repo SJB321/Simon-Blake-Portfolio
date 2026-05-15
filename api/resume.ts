@@ -97,7 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 async function getResume(res: VercelResponse) {
-  const [profile, about, education, skillGroups, projects, experience] =
+  const [profile, about, education, skillGroups, projects, experience, settings, themes] =
     await Promise.all([
       prisma.profile.findUnique({ where: { id: 1 } }),
       prisma.about.findUnique({ where: { id: 1 } }),
@@ -105,7 +105,13 @@ async function getResume(res: VercelResponse) {
       prisma.skillGroup.findMany({ orderBy: { order: 'asc' } }),
       prisma.project.findMany({ orderBy: { order: 'asc' } }),
       prisma.experience.findMany({ orderBy: { order: 'asc' } }),
+      prisma.settings.findUnique({ where: { id: 1 } }),
+      prisma.theme.findMany({ orderBy: { createdAt: 'asc' } }),
     ])
+
+  const activeTheme = settings?.activeThemeId
+    ? themes.find((t) => t.id === settings.activeThemeId) ?? null
+    : null
 
   // Don't cache at the edge — content is editable and we need post-save
   // refetches to see the latest data immediately. The function is cheap
@@ -119,6 +125,9 @@ async function getResume(res: VercelResponse) {
     skillGroups,
     projects,
     experience,
+    themes,
+    activeTheme,
+    activeThemeId: settings?.activeThemeId ?? null,
   })
 }
 
